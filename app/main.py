@@ -15,6 +15,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def raiz():
+    return {"mensaje": "API Certificaciones Médicas - Panamá", "docs": "/docs"}
+
 
 @app.get("/health")
 def health():
