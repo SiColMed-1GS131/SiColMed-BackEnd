@@ -1,9 +1,11 @@
+# Tablero de Importaciones y Dependencias
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from fastapi.responses import RedirectResponse
 
+# Tablero de Importanciones y dependencias menores
 from app.config import settings
 from app.database import get_db
 
@@ -16,15 +18,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Métodos principales
 @app.get("/", include_in_schema=False)
 def raiz():
     return RedirectResponse(url="/docs")
 
-
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
 
 @app.get("/health/db")
 def health_db(db: Session = Depends(get_db)):
