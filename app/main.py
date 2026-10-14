@@ -4,12 +4,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from fastapi.responses import RedirectResponse
+from sqlalchemy.exc import DBAPIError
 
 # Tablero de Importanciones y dependencias menores
 from app.config import settings
 from app.database import get_db
+from app.errors import manejar_error_bd
 
 app = FastAPI(title="API Certificaciones Médicas - Panamá")
+app.add_exception_handler(DBAPIError, manejar_error_bd)
 
 app.add_middleware(
     CORSMiddleware,
