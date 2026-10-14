@@ -2,6 +2,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from fastapi.responses import RedirectResponse
 
 from app.config import settings
 from app.database import get_db
@@ -15,9 +16,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 def raiz():
-    return {"mensaje": "API Certificaciones Médicas - Panamá", "docs": "/docs"}
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/health")
