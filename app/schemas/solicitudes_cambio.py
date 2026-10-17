@@ -2,6 +2,8 @@
 from typing import Literal
 from pydantic import BaseModel
 
+EstadoDecision = Literal['APROBADO', 'RECHAZADO']
+
 class DecisionCambio(BaseModel):
     """Decisión del administrador sobre un campo."""
-    estado: Literal['aceptado', 'negado']
+    estado: EstadoDecision
