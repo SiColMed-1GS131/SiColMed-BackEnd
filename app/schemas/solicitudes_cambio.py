@@ -1,7 +1,7 @@
 """Solicitud de cambio de un campo en la base de datos."""
 from datetime import datetime
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 # PROVISIONAL: README y doc de BD dicen ACEPTADO/NEGADO; BD confirmó de palabra
 # APROBADO/RECHAZADO. Pendiente de confirmación escrita antes de integrar.
@@ -28,12 +28,19 @@ class SolicitudCambioCrear(BaseModel):
     model_config = ConfigDict(extra='forbid')
     cambios: list[CambioSolicitado] = Field(min_length=1)
 
+    @model_validator(mode='after')
+    def sin_campos_repetidos(self):
+        campos = [c.campo for c in self.cambios]
+        if len(campos) != len(set(campos)):
+            raise ValueError('No se puede repetir un campo en la misma solicitud.')
+        return self
+
 
 class SolicitudCambioProcesar(BaseModel):
     """Decisiones del administrador sobre la solicitud de cambio."""
     model_config = ConfigDict(extra='forbid')
     decisiones: dict[str, DecisionCambio] = Field(min_length=1)
-    comentario: str |None = None
+    comentario: str | None = None
 
 
 class SolicitudCambioItem(BaseModel):
