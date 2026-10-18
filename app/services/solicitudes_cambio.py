@@ -20,3 +20,14 @@ def armar_cambios(cambios: list[CambioSolicitado]) -> dict[str, dict[str, str]]:
     Los campos repetidos ya los rechaza el schema SolicitudCambioCrear.
     """
     return {c.campo: {"valor_nuevo": c.valor_nuevo} for c in cambios}
+
+
+def crear_solicitud(
+    db: Session, id_medico: int, cambios: list[CambioSolicitado]
+) -> Any:
+    """Crea una solicitud de cambio para el médico indicado.
+
+    Transforma la lista validada en el diccionario por campo y delega en el
+    repository. El retorno se pasa tal cual (pendiente de confirmar con BD).
+    """
+    return repo.crear_solicitud_cambio(db, id_medico, armar_cambios(cambios))
