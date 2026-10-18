@@ -35,13 +35,30 @@ class SolicitudCambioProcesar(BaseModel):
 
 class SolicitudCambioItem(BaseModel):
     """Fila de la bandeja del administrador."""
+    model_config = ConfigDict(
+        json_schema_extra={
+            'examples': [{
+                'id_solicitud_cambio': 12,
+                'id_medico': 5,
+                'nombre_completo': 'Ana Pérez',
+                'estado': 'PENDIENTE',
+                'fecha_solicitud': '2026-10-18T09:30:00',
+                'cambios': {
+                    'cargo': {
+                        'valor_anterior': 'Médico general',
+                        'valor_nuevo': 'Jefe de servicio',
+                        'estado': 'PENDIENTE',
+                    }
+                },
+            }]
+        }
+    )
     id_solicitud_cambio: int
     id_medico: int
     nombre_completo: str
     estado: str
     fecha_solicitud: datetime
     cambios: dict
-
 
 
 
