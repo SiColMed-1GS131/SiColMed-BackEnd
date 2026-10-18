@@ -4,7 +4,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 EstadoDecision = Literal['APROBADO', 'RECHAZADO']
-EstadoSolicitud = Literal['PENDIENTE', 'PROCESAO']
+EstadoSolicitud = Literal['PENDIENTE', 'PROCESADO']
 
 
 class DecisionCambio(BaseModel):
