@@ -3,7 +3,10 @@ from datetime import datetime
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
+# PROVISIONAL: README y doc de BD dicen ACEPTADO/NEGADO; BD confirmó de palabra
+# APROBADO/RECHAZADO. Pendiente de confirmación escrita antes de integrar.
 EstadoDecision = Literal['APROBADO', 'RECHAZADO']
+# PROVISIONAL: el doc de BD dice "valores como PROCESADO o PENDIENTE", sin lista cerrada.
 EstadoSolicitud = Literal['PENDIENTE', 'PROCESADO']
 
 
