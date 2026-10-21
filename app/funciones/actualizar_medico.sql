@@ -101,8 +101,12 @@ BEGIN
         END IF;
 
         FOR v_campo IN SELECT jsonb_object_keys(v_datos_dir) LOOP
-            EXECUTE format('UPDATE direccion SET %I = ($1).%I WHERE id_direccion = $2', v_campo, v_campo)
-              USING v_dir, v_id_direccion;
+            EXECUTE format(
+                'UPDATE direccion SET %I = ($1).%I WHERE id_direccion = $2',
+                v_campo,
+                v_campo
+            )
+            USING v_dir, v_id_direccion;
         END LOOP;
 
         -- Provincia y distrito se derivan del corregimiento.
