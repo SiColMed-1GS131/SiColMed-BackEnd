@@ -7,6 +7,14 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import DBAPIError
 
 
+class RespuestaBDInvalida(Exception):
+    """La base de datos devolvió una estructura inesperada."""
+
+
+class MedicoNoEncontrado(Exception):
+    """El médico solicitado no existe o no puede ser actualizado."""
+
+
 def _obtener_mensaje_bd(error: DBAPIError) -> str:
     """Obtiene el mensaje principal enviado por PostgreSQL."""
     diagnostico: Any = getattr(error.orig, "diag", None)
