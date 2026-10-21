@@ -12,6 +12,7 @@ from app.database import get_db
 from app.errors import manejar_error_bd
 from app.routers.medicos_directorio import router as router_medicos_directorio
 from app.routers import solicitudes_cambio
+from app.routers.medicos_directorio import router as router_medicos_directorio
 
 app = FastAPI(title="API Certificaciones Médicas - Panamá")
 app.add_exception_handler(DBAPIError, manejar_error_bd)
