@@ -1,35 +1,27 @@
-
--- Nota: los parámetros de paginación tienen valores predeterminados.
 -- Los filtros son opcionales y se combinan mediante AND.
+-- La paginación tiene valores predeterminados.
+-- El resultado se devuelve como JSONB con items y total.
 
 CREATE OR REPLACE FUNCTION filtrar_medicos(
     p_apellido              TEXT DEFAULT NULL,
     p_id_especialidad       INTEGER DEFAULT NULL,
-    p_id_subespecialidad    INTEGER DEFAULT NULL,
     p_id_asociacion         INTEGER DEFAULT NULL,
+    p_id_subespecialidad    INTEGER DEFAULT NULL,
     p_certificacion_vigente BOOLEAN DEFAULT NULL,
     p_id_provincia          INTEGER DEFAULT NULL,
     p_lugar_trabajo         TEXT DEFAULT NULL,
     p_pagina                INTEGER DEFAULT 1,
     p_tamano_pagina         INTEGER DEFAULT 20
 )
-RETURNS TABLE (
-    id_medico             INTEGER,
-    nombre_completo       TEXT,
-    numero_idoneidad      TEXT,
-    especialidades        TEXT,
-    asociaciones          TEXT,
-    certificacion_vigente BOOLEAN,
-    provincia             TEXT,
-    lugar_trabajo         TEXT,
-    total_resultados      BIGINT
-)
+RETURNS JSONB
 LANGUAGE plpgsql
 STABLE
 AS $$
 DECLARE
     v_apellido TEXT := NULLIF(BTRIM(p_apellido), '');
     v_lugar    TEXT := NULLIF(BTRIM(p_lugar_trabajo), '');
+    v_total    BIGINT;
+    v_items    JSONB;
 BEGIN
     IF p_pagina IS NULL OR p_pagina < 1 THEN
         RAISE EXCEPTION 'La página debe ser mayor o igual que 1';
@@ -38,10 +30,10 @@ BEGIN
     IF p_tamano_pagina IS NULL
        OR p_tamano_pagina < 1
        OR p_tamano_pagina > 100 THEN
-        RAISE EXCEPTION 'El tamaño de página debe estar entre 1 y 100';
+        RAISE EXCEPTION
+            'El tamaño de página debe estar entre 1 y 100';
     END IF;
 
-    RETURN QUERY
     WITH base AS (
         SELECT
             m.id_medico,
@@ -120,21 +112,21 @@ BEGIN
             )
         )
         AND (
-            p_id_subespecialidad IS NULL
-            OR EXISTS (
-                SELECT 1
-                FROM medico_subespecialidad x
-                WHERE x.id_medico = b.id_medico
-                  AND x.id_subespecialidad = p_id_subespecialidad
-            )
-        )
-        AND (
             p_id_asociacion IS NULL
             OR EXISTS (
                 SELECT 1
                 FROM medico_asociacion x
                 WHERE x.id_medico = b.id_medico
                   AND x.id_asociacion = p_id_asociacion
+            )
+        )
+        AND (
+            p_id_subespecialidad IS NULL
+            OR EXISTS (
+                SELECT 1
+                FROM medico_subespecialidad x
+                WHERE x.id_medico = b.id_medico
+                  AND x.id_subespecialidad = p_id_subespecialidad
             )
         )
         AND (
@@ -155,25 +147,53 @@ BEGIN
                       LIKE '%' || LOWER(v_lugar) || '%'
             )
         )
+    ),
+    total AS (
+        SELECT COUNT(*)::BIGINT AS cantidad
+        FROM filtrados
+    ),
+    pagina AS (
+        SELECT f.*
+        FROM filtrados f
+        ORDER BY
+            f.apellido_paterno ASC NULLS LAST,
+            f.apellido_materno ASC NULLS LAST,
+            f.primer_nombre ASC NULLS LAST,
+            f.id_medico ASC
+        LIMIT p_tamano_pagina
+        OFFSET (p_pagina - 1) * p_tamano_pagina
     )
     SELECT
-        f.id_medico,
-        f.nombre_completo,
-        f.numero_idoneidad,
-        f.especialidades,
-        f.asociaciones,
-        f.vigente,
-        f.provincia,
-        f.lugares,
-        COUNT(*) OVER () AS total_resultados
-    FROM filtrados f
-    ORDER BY
-        f.apellido_paterno ASC NULLS LAST,
-        f.apellido_materno ASC NULLS LAST,
-        f.primer_nombre ASC NULLS LAST,
-        f.id_medico ASC
-    LIMIT p_tamano_pagina
-    OFFSET (p_pagina - 1) * p_tamano_pagina;
+        t.cantidad,
+        COALESCE(
+            (
+                SELECT JSONB_AGG(
+                    JSONB_BUILD_OBJECT(
+                        'id_medico', p.id_medico,
+                        'nombre_completo', p.nombre_completo,
+                        'numero_idoneidad', p.numero_idoneidad,
+                        'especialidades', p.especialidades,
+                        'asociaciones', p.asociaciones,
+                        'certificacion_vigente', p.vigente,
+                        'provincia', p.provincia,
+                        'lugar_trabajo', p.lugares
+                    )
+                    ORDER BY
+                        p.apellido_paterno ASC NULLS LAST,
+                        p.apellido_materno ASC NULLS LAST,
+                        p.primer_nombre ASC NULLS LAST,
+                        p.id_medico ASC
+                )
+                FROM pagina p
+            ),
+            '[]'::JSONB
+        )
+    INTO v_total, v_items
+    FROM total t;
 
+    RETURN JSONB_BUILD_OBJECT(
+        'items', v_items,
+        'total', v_total
+    );
 END;
 $$;

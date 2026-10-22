@@ -24,8 +24,9 @@ DECLARE
     v_id_direccion      integer;
     v_campo             text;
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM usuario WHERE id_usuario = p_id_administrador AND activo) THEN
-        RAISE EXCEPTION 'El administrador % no existe o está inactivo', p_id_administrador;
+    IF NOT EXISTS (SELECT 1 FROM usuario u JOIN rol r ON r.id_rol = u.id_rol WHERE u.id_usuario = p_id_administrador AND u.activo = TRUE AND LOWER(BTRIM(r.nombre)) = 'administrador') 
+    THEN
+        RAISE EXCEPTION 'El administrador % no existe, está inactivo o no tiene el rol de administrador', p_id_administrador;
     END IF;
 
     SELECT * INTO v_medico FROM medico WHERE id_medico = p_id_medico FOR UPDATE;
