@@ -4,19 +4,19 @@ from app.schemas.movimientos import MovimientoCreate
 from datetime import date
 from typing import List, dict
 
-    def registrar_movimiento(self, movimiento: MovimientoCreate):
-        detalle_json = json.dumps([detalle.model_dump() for detalle in movimiento.detalle])
-        
-        nuevo_id = self.db.llamar_escalar(
-            "registrar_movimiento",
-            [
-                Arg("p_fecha", movimiento.fecha),
-                Arg("p_descripcion", movimiento.descripcion),
-                Arg("p_detalle", detalle_json)
-            ],
-            commit=True
-        )
-        return nuevo_id
+def registrar_movimiento(movimiento: MovimientoCreate):
+    detalle_json = json.dumps([detalle.model_dump() for detalle in movimiento.detalle])
+    
+    query = "SELECT registrar_movimiento(:p_fecha, :p_descripcion, :p_detalle)"
+    
+    nuevo_id = llamar_escalar(
+        query,
+        Arg(movimiento.fecha, "date"),
+        Arg(movimiento.descripcion, "text"),
+        Arg(detalle_json, "jsonb"),
+        commit=True
+    )
+    return nuevo_id
 
 def consultar_movimientos_diarios(fecha: date) -> List[dict]:
     query = "SELECT * FROM consultar_movimientos_diarios(:p_fecha)"
@@ -30,3 +30,4 @@ def consultar_movimientos_por_cuenta(id_cuenta: int, fecha_inicio: date, fecha_f
         Arg(fecha_inicio, "date"),
         Arg(fecha_fin, "date")
     )
+    
