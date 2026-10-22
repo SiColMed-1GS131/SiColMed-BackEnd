@@ -22,6 +22,28 @@ CamposActualizablesMedico: Final[frozenset[str]] = frozenset(
         "email_personal",
     }
 )
+CamposActualizablesDireccion: Final[frozenset[str]] = frozenset(
+    {
+        "apartado_postal",
+        "calle",
+        "edificio",
+        "numero_direccion",
+        "id_corregimiento",
+    }
+)
+CamposActualizablesPerfilMedico: Final[frozenset[str]] = frozenset(
+    {
+        "primer_nombre",
+        "segundo_nombre",
+        "apellido_paterno",
+        "apellido_materno",
+        "foto",
+        "telefono_residencial",
+        "celular",
+        "email_personal",
+        "direccion",
+    }
+)
 
 # Endpoint 1: GET /medicos
 class FiltroMedicos(BaseModel):
@@ -83,6 +105,18 @@ class ListaMedicosRespuesta(BaseModel):
 
 
 # Endpoint 2: patch /medicos/{id_medico}
+class ActualizarDireccionSolicitud(BaseModel):
+    """Campos de dirección residencial que pueden actualizarse."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    apartado_postal: str | None = Field(default=None, min_length=1)
+    calle: str | None = Field(default=None, min_length=1)
+    edificio: str | None = Field(default=None, min_length=1)
+    numero_direccion: str | None = Field(default=None, min_length=1)
+    id_corregimiento: int | None = Field(default=None, ge=1)
+
+
 class ActualizarMedicoSolicitud(BaseModel):
     """Campos que la API puede recibir para actualizar un médico."""
 
@@ -100,6 +134,24 @@ class ActualizarMedicoSolicitud(BaseModel):
     telefono_residencial: str | None = Field(default=None, min_length=1)
     celular: str | None = Field(default=None, min_length=1)
     email_personal: EmailStr | None = None
+    direccion: ActualizarDireccionSolicitud | None = None
+
+
+class ActualizarPerfilMedicoSolicitud(BaseModel):
+    """Campos no sensibles que el médico puede actualizar directamente."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    primer_nombre: str | None = Field(default=None, min_length=1)
+    segundo_nombre: str | None = Field(default=None, min_length=1)
+    apellido_paterno: str | None = Field(default=None, min_length=1)
+    apellido_materno: str | None = Field(default=None, min_length=1)
+    foto: str | None = Field(default=None, min_length=1)
+    telefono_residencial: str | None = Field(default=None, min_length=1)
+    celular: str | None = Field(default=None, min_length=1)
+    email_personal: EmailStr | None = None
+    direccion: ActualizarDireccionSolicitud | None = None
+
 
 # Resultado de la actualización devuelto por la función de BD
 class ActualizarMedicoRespuesta(BaseModel):

@@ -22,11 +22,11 @@ class RepositorioMedicosDirectorio:
             {
                 "apellido": Arg(filtros.apellido, "text"),
                 "id_especialidad": Arg(filtros.id_especialidad, "integer"),
-                "id_asociacion": Arg(filtros.id_asociacion, "integer"),
                 "id_subespecialidad": Arg(
                     filtros.id_subespecialidad,
                     "integer",
                 ),
+                "id_asociacion": Arg(filtros.id_asociacion, "integer"),
                 "certificacion_vigente": Arg(
                     filtros.certificacion_vigente,
                     "boolean",

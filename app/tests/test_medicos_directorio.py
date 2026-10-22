@@ -1,5 +1,10 @@
+from app.repositories import medicos_directorio
 from app.schemas.medicos_directorio import FiltroMedicos
-from app.services.medicos_directorio import actualizar_medico, obtener_medicos
+from app.services.medicos_directorio import (
+    actualizar_medico,
+    actualizar_perfil_medico,
+    obtener_medicos,
+)
 from app.errors import MedicoNoEncontrado, RespuestaBDInvalida
 
 
@@ -69,6 +74,54 @@ def test_obtener_medicos_rechaza_respuesta_de_bd_invalida():
         raise AssertionError("Se esperaba una respuesta inválida de BD.")
 
 
+def test_repositorio_filtrar_medicos_envia_parametros_en_orden_de_bd(
+    monkeypatch,
+):
+    llamada = {}
+
+    def llamar_escalar_falso(db, funcion, parametros):
+        llamada["funcion"] = funcion
+        llamada["parametros"] = parametros
+        return {"items": [], "total": 0}
+
+    monkeypatch.setattr(
+        medicos_directorio,
+        "llamar_escalar",
+        llamar_escalar_falso,
+    )
+
+    filtros = FiltroMedicos(
+        apellido="gomez",
+        id_especialidad=2,
+        id_subespecialidad=3,
+        id_asociacion=4,
+        certificacion_vigente=True,
+        id_provincia=5,
+        lugar_trabajo="Hospital",
+        pagina=2,
+        tamano_pagina=20,
+    )
+
+    resultado = medicos_directorio.RepositorioMedicosDirectorio().filtrar_medicos(
+        None,
+        filtros,
+    )
+
+    assert resultado == {"items": [], "total": 0}
+    assert llamada["funcion"] == "filtrar_medicos"
+    assert list(llamada["parametros"]) == [
+        "apellido",
+        "id_especialidad",
+        "id_subespecialidad",
+        "id_asociacion",
+        "certificacion_vigente",
+        "id_provincia",
+        "lugar_trabajo",
+        "pagina",
+        "tamano_pagina",
+    ]
+
+
 class RepositorioActualizacionFalso:
     def actualizar_medico(self, db, id_medico, id_administrador, datos):
         return False
@@ -89,3 +142,83 @@ def test_actualizar_medico_inexistente_lanza_error_de_no_encontrado():
         assert "99" in str(error)
     else:
         raise AssertionError("Se esperaba un error de médico no encontrado.")
+
+
+def test_actualizar_medico_envia_direccion_en_json():
+    from app.schemas.medicos_directorio import ActualizarMedicoSolicitud
+
+    class Repositorio:
+        def __init__(self):
+            self.datos = None
+
+        def actualizar_medico(self, db, id_medico, id_administrador, datos):
+            self.datos = datos
+            return True
+
+    repositorio = Repositorio()
+    respuesta = actualizar_medico(
+        None,
+        1,
+        15,
+        ActualizarMedicoSolicitud(
+            direccion= {
+                "calle": "Calle Principal",
+                "id_corregimiento": 5,
+            }
+        ),
+        repositorio,
+    )
+
+    assert respuesta.actualizado is True
+    assert repositorio.datos == {
+        "direccion": {
+            "calle": "Calle Principal",
+            "id_corregimiento": 5,
+        }
+    }
+
+
+def test_actualizar_perfil_medico_restringe_campos_sensibles():
+    from app.schemas.medicos_directorio import ActualizarPerfilMedicoSolicitud
+
+    class Repositorio:
+        def actualizar_medico(self, db, id_medico, id_usuario, datos):
+            return True
+
+    datos = ActualizarPerfilMedicoSolicitud(primer_nombre="Ana")
+    respuesta = actualizar_perfil_medico(
+        None,
+        1,
+        15,
+        datos,
+        Repositorio(),
+    )
+
+    assert respuesta.actualizado is True
+
+
+def test_actualizar_perfil_medico_envia_direccion():
+    from app.schemas.medicos_directorio import ActualizarPerfilMedicoSolicitud
+
+    class Repositorio:
+        def __init__(self):
+            self.datos = None
+
+        def actualizar_medico(self, db, id_medico, id_usuario, datos):
+            self.datos = datos
+            return True
+
+    repositorio = Repositorio()
+    actualizar_perfil_medico(
+        None,
+        1,
+        15,
+        ActualizarPerfilMedicoSolicitud(
+            direccion={"id_corregimiento": 5},
+        ),
+        repositorio,
+    )
+
+    assert repositorio.datos == {
+        "direccion": {"id_corregimiento": 5},
+    }
