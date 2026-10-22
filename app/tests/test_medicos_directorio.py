@@ -1,6 +1,10 @@
 from app.repositories import medicos_directorio
 from app.schemas.medicos_directorio import FiltroMedicos
-from app.services.medicos_directorio import actualizar_medico, obtener_medicos
+from app.services.medicos_directorio import (
+    actualizar_medico,
+    actualizar_perfil_medico,
+    obtener_medicos,
+)
 from app.errors import MedicoNoEncontrado, RespuestaBDInvalida
 
 
@@ -138,3 +142,83 @@ def test_actualizar_medico_inexistente_lanza_error_de_no_encontrado():
         assert "99" in str(error)
     else:
         raise AssertionError("Se esperaba un error de médico no encontrado.")
+
+
+def test_actualizar_medico_envia_direccion_en_json():
+    from app.schemas.medicos_directorio import ActualizarMedicoSolicitud
+
+    class Repositorio:
+        def __init__(self):
+            self.datos = None
+
+        def actualizar_medico(self, db, id_medico, id_administrador, datos):
+            self.datos = datos
+            return True
+
+    repositorio = Repositorio()
+    respuesta = actualizar_medico(
+        None,
+        1,
+        15,
+        ActualizarMedicoSolicitud(
+            direccion= {
+                "calle": "Calle Principal",
+                "id_corregimiento": 5,
+            }
+        ),
+        repositorio,
+    )
+
+    assert respuesta.actualizado is True
+    assert repositorio.datos == {
+        "direccion": {
+            "calle": "Calle Principal",
+            "id_corregimiento": 5,
+        }
+    }
+
+
+def test_actualizar_perfil_medico_restringe_campos_sensibles():
+    from app.schemas.medicos_directorio import ActualizarPerfilMedicoSolicitud
+
+    class Repositorio:
+        def actualizar_medico(self, db, id_medico, id_usuario, datos):
+            return True
+
+    datos = ActualizarPerfilMedicoSolicitud(primer_nombre="Ana")
+    respuesta = actualizar_perfil_medico(
+        None,
+        1,
+        15,
+        datos,
+        Repositorio(),
+    )
+
+    assert respuesta.actualizado is True
+
+
+def test_actualizar_perfil_medico_envia_direccion():
+    from app.schemas.medicos_directorio import ActualizarPerfilMedicoSolicitud
+
+    class Repositorio:
+        def __init__(self):
+            self.datos = None
+
+        def actualizar_medico(self, db, id_medico, id_usuario, datos):
+            self.datos = datos
+            return True
+
+    repositorio = Repositorio()
+    actualizar_perfil_medico(
+        None,
+        1,
+        15,
+        ActualizarPerfilMedicoSolicitud(
+            direccion={"id_corregimiento": 5},
+        ),
+        repositorio,
+    )
+
+    assert repositorio.datos == {
+        "direccion": {"id_corregimiento": 5},
+    }

@@ -144,6 +144,7 @@ Endpoints:
 | Método | Ruta | Procedimiento BD o fuente |
 |---|---|---|
 | `GET` | `/medicos` | `filtrar_medicos` |
+| `PATCH` | `/medicos/{id_medico}/perfil` | `actualizar_medico` |
 | `PATCH` | `/medicos/{id_medico}` | `actualizar_medico` |
 | `GET` | `/provincias` | Confirmar con BD |
 | `GET` | `/provincias/{id_provincia}/distritos` | Confirmar con BD |
@@ -155,6 +156,8 @@ Responsabilidades:
 - Soportar filtros por apellido, especialidad, asociación, certificación
   vigente o provincia.
 - Validar la lista de campos permitidos para `PATCH`.
+- Permitir al médico actualizar únicamente información no sensible de su
+  propio perfil mediante `/medicos/{id_medico}/perfil`.
 - Enviar a `actualizar_medico` los datos como JSON y el administrador actual.
 - Confirmar si los catálogos geográficos se consultan mediante funciones
   almacenadas u ORM.

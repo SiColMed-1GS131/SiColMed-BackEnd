@@ -9,8 +9,11 @@ from pydantic import ValidationError
 from app.errors import MedicoNoEncontrado, RespuestaBDInvalida
 from app.schemas.medicos_directorio import (
     ActualizarMedicoRespuesta,
+    ActualizarPerfilMedicoSolicitud,
     ActualizarMedicoSolicitud,
+    CamposActualizablesDireccion,
     CamposActualizablesMedico,
+    CamposActualizablesPerfilMedico,
     FiltroMedicos,
     ListaMedicosRespuesta,
     MedicoResumen,
@@ -91,17 +94,77 @@ def actualizar_medico(
         raise ValueError("El id del administrador debe ser mayor que cero.")
 
     cambios = datos.model_dump(exclude_unset=True)
-    campos_no_permitidos = set(cambios) - CamposActualizablesMedico
+    campos_no_permitidos = set(cambios) - (
+        CamposActualizablesMedico | {"direccion"}
+    )
     if campos_no_permitidos:
         nombres = ", ".join(sorted(campos_no_permitidos))
         raise ValueError(f"Campos no permitidos para actualizar: {nombres}.")
     if not cambios:
         raise ValueError("Debe enviar al menos un campo para actualizar.")
+    if "direccion" in cambios:
+        direccion = cambios["direccion"]
+        if not isinstance(direccion, dict):
+            raise ValueError("La dirección debe ser un objeto.")
+        campos_direccion_no_permitidos = (
+            set(direccion) - CamposActualizablesDireccion
+        )
+        if campos_direccion_no_permitidos:
+            nombres = ", ".join(sorted(campos_direccion_no_permitidos))
+            raise ValueError(
+                f"Campos de dirección no permitidos: {nombres}."
+            )
 
     actualizado = repositorio.actualizar_medico(
         db,
         id_medico,
         id_administrador,
+        cambios,
+    )
+    if not actualizado:
+        raise MedicoNoEncontrado(
+            f"No se encontró el médico con id {id_medico}."
+        )
+    return ActualizarMedicoRespuesta(actualizado=actualizado)
+
+
+def actualizar_perfil_medico(
+    db: Session,
+    id_medico: int,
+    id_usuario: int,
+    datos: ActualizarPerfilMedicoSolicitud,
+    repositorio: RepositorioActualizacionMedico,
+) -> ActualizarMedicoRespuesta:
+    """Actualiza únicamente información no sensible del propio perfil."""
+    if id_medico < 1:
+        raise ValueError("El id del médico debe ser mayor que cero.")
+    if id_usuario < 1:
+        raise ValueError("El id del usuario debe ser mayor que cero.")
+
+    cambios = datos.model_dump(exclude_unset=True)
+    campos_no_permitidos = set(cambios) - CamposActualizablesPerfilMedico
+    if campos_no_permitidos:
+        nombres = ", ".join(sorted(campos_no_permitidos))
+        raise ValueError(f"Campos no permitidos para el perfil: {nombres}.")
+    if not cambios:
+        raise ValueError("Debe enviar al menos un campo para actualizar.")
+    if "direccion" in cambios:
+        direccion = cambios["direccion"]
+        if not isinstance(direccion, dict):
+            raise ValueError("La dirección debe ser un objeto.")
+        campos_direccion_no_permitidos = (
+            set(direccion) - CamposActualizablesDireccion
+        )
+        if campos_direccion_no_permitidos:
+            nombres = ", ".join(sorted(campos_direccion_no_permitidos))
+            raise ValueError(
+                f"Campos de dirección no permitidos: {nombres}."
+            )
+
+    actualizado = repositorio.actualizar_medico(
+        db,
+        id_medico,
+        id_usuario,
         cambios,
     )
     if not actualizado:
