@@ -1,3 +1,4 @@
+from app.repositories import medicos_directorio
 from app.schemas.medicos_directorio import FiltroMedicos
 from app.services.medicos_directorio import actualizar_medico, obtener_medicos
 from app.errors import MedicoNoEncontrado, RespuestaBDInvalida
@@ -67,6 +68,54 @@ def test_obtener_medicos_rechaza_respuesta_de_bd_invalida():
         assert "items y total" in str(error)
     else:
         raise AssertionError("Se esperaba una respuesta inválida de BD.")
+
+
+def test_repositorio_filtrar_medicos_envia_parametros_en_orden_de_bd(
+    monkeypatch,
+):
+    llamada = {}
+
+    def llamar_escalar_falso(db, funcion, parametros):
+        llamada["funcion"] = funcion
+        llamada["parametros"] = parametros
+        return {"items": [], "total": 0}
+
+    monkeypatch.setattr(
+        medicos_directorio,
+        "llamar_escalar",
+        llamar_escalar_falso,
+    )
+
+    filtros = FiltroMedicos(
+        apellido="gomez",
+        id_especialidad=2,
+        id_subespecialidad=3,
+        id_asociacion=4,
+        certificacion_vigente=True,
+        id_provincia=5,
+        lugar_trabajo="Hospital",
+        pagina=2,
+        tamano_pagina=20,
+    )
+
+    resultado = medicos_directorio.RepositorioMedicosDirectorio().filtrar_medicos(
+        None,
+        filtros,
+    )
+
+    assert resultado == {"items": [], "total": 0}
+    assert llamada["funcion"] == "filtrar_medicos"
+    assert list(llamada["parametros"]) == [
+        "apellido",
+        "id_especialidad",
+        "id_subespecialidad",
+        "id_asociacion",
+        "certificacion_vigente",
+        "id_provincia",
+        "lugar_trabajo",
+        "pagina",
+        "tamano_pagina",
+    ]
 
 
 class RepositorioActualizacionFalso:
