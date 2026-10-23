@@ -60,11 +60,7 @@ def cargar_funciones():
         firma = firmas_bd.get(nombre.lower())
 
         if firma is None:
-            raise RuntimeError(
-                f"No se encontró la firma de {nombre} en PostgreSQL. "
-                "No se registrará automáticamente una función nueva "
-                "sin determinar antes su firma."
-            )
+            continue
 
         funciones.append(
             PGFunction(
