@@ -93,10 +93,10 @@ de todos los módulos.
 Archivos principales:
 
 ```text
-routers/medicos.py
-schemas/medicos.py
-services/medicos.py
-repositories/medicos.py
+routers/medicos.py                 # P1: registro y perfil
+schemas/medicos.py                 # P1: registro y perfil
+services/medicos.py                # P1: registro y perfil
+repositories/medicos.py            # P1: registro y perfil
 ```
 
 Endpoints:
@@ -129,13 +129,13 @@ Tareas compartidas de P1:
 Archivos principales:
 
 ```text
-routers/medicos_filtros.py
+routers/medicos_directorio.py
 routers/catalogos_geograficos.py
-schemas/medicos_filtros.py
+schemas/medicos_directorio.py
 schemas/catalogos_geograficos.py
-services/medicos_filtros.py
+services/medicos_directorio.py
 services/catalogos_geograficos.py
-repositories/medicos_filtros.py
+repositories/medicos_directorio.py
 repositories/catalogos_geograficos.py
 ```
 
@@ -144,6 +144,7 @@ Endpoints:
 | Método | Ruta | Procedimiento BD o fuente |
 |---|---|---|
 | `GET` | `/medicos` | `filtrar_medicos` |
+| `PATCH` | `/medicos/{id_medico}/perfil` | `actualizar_medico` |
 | `PATCH` | `/medicos/{id_medico}` | `actualizar_medico` |
 | `GET` | `/provincias` | Confirmar con BD |
 | `GET` | `/provincias/{id_provincia}/distritos` | Confirmar con BD |
@@ -155,6 +156,8 @@ Responsabilidades:
 - Soportar filtros por apellido, especialidad, asociación, certificación
   vigente o provincia.
 - Validar la lista de campos permitidos para `PATCH`.
+- Permitir al médico actualizar únicamente información no sensible de su
+  propio perfil mediante `/medicos/{id_medico}/perfil`.
 - Enviar a `actualizar_medico` los datos como JSON y el administrador actual.
 - Confirmar si los catálogos geográficos se consultan mediante funciones
   almacenadas u ORM.
@@ -273,8 +276,7 @@ Archivos principales:
 ```text
 requirements-dev.txt
 app/tests/conftest.py
-app/tests/test_medicos.py
-app/tests/test_medicos_filtros.py
+app/tests/test_medicos_directorio.py
 app/tests/test_catalogos_geograficos.py
 app/tests/test_solicitudes_cambio.py
 app/tests/test_catalogos_profesionales.py

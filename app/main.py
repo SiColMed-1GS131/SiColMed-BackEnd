@@ -10,9 +10,11 @@ from sqlalchemy.exc import DBAPIError
 from app.config import settings
 from app.database import get_db
 from app.errors import manejar_error_bd
+from app.routers.medicos_directorio import router as router_medicos_directorio
 
 app = FastAPI(title="API Certificaciones Médicas - Panamá")
 app.add_exception_handler(DBAPIError, manejar_error_bd)
+app.include_router(router_medicos_directorio)
 
 app.add_middleware(
     CORSMiddleware,
