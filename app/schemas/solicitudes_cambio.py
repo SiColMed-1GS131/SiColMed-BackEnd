@@ -3,12 +3,8 @@ from datetime import datetime
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-# PROVISIONAL: README y doc de BD dicen ACEPTADO/NEGADO; BD confirmó de palabra
-# APROBADO/RECHAZADO. Pendiente de confirmación escrita antes de integrar.
 EstadoDecision = Literal['APROBADO', 'RECHAZADO']
-# PROVISIONAL: el doc de BD dice "valores como PROCESADO o PENDIENTE", sin lista cerrada.
 EstadoSolicitud = Literal['PENDIENTE', 'PROCESADO']
-
 
 class DecisionCambio(BaseModel):
     """Decisión del administrador sobre un campo."""
@@ -25,7 +21,17 @@ class CambioSolicitado(BaseModel):
 
 class SolicitudCambioCrear(BaseModel):
     """Solicitud de cambio enviada por el médico."""
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(
+        extra='forbid',
+        json_schema_extra={
+            'examples': [{
+                'cambios': [
+                    {'campo': 'celular', 'valor_nuevo': '6000-2222'},
+                    {'campo': 'email_personal', 'valor_nuevo': 'ana.perez@example.com'}
+                ]
+            }]
+        }
+    )
     cambios: list[CambioSolicitado] = Field(min_length=1)
 
     @model_validator(mode='after')
@@ -38,7 +44,17 @@ class SolicitudCambioCrear(BaseModel):
 
 class SolicitudCambioProcesar(BaseModel):
     """Decisiones del administrador sobre la solicitud de cambio."""
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(
+        extra='forbid',
+        json_schema_extra={
+            'examples': [{
+                'decisiones': {
+                    'celular': {'estado': 'APROBADO'},
+                },
+                'comentario': 'Cambio revisado.',
+            }]
+        },
+    )
     decisiones: dict[str, DecisionCambio] = Field(min_length=1)
     comentario: str | None = None
 
@@ -54,9 +70,9 @@ class SolicitudCambioItem(BaseModel):
                 'estado': 'PENDIENTE',
                 'fecha_solicitud': '2026-10-18T09:30:00',
                 'cambios': {
-                    'cargo': {
-                        'valor_anterior': 'Médico general',
-                        'valor_nuevo': 'Jefe de servicio',
+                    'celular': {
+                        'valor_anterior': '6000-1111',
+                        'valor_nuevo': '6000-2222',
                         'estado': 'PENDIENTE',
                     }
                 },
@@ -70,7 +86,13 @@ class SolicitudCambioItem(BaseModel):
     fecha_solicitud: datetime
     cambios: dict
 
-
-
-
-
+class SolicitudCambioCreada(BaseModel):
+    """Respuesta al crear una solicitud de cambio."""
+    model_config = ConfigDict(
+        json_schema_extra={
+            'examples': [{
+                'id_solicitud_cambio': 12,
+            }]
+        }
+    )
+    id_solicitud_cambio: int
