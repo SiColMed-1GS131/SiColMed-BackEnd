@@ -95,7 +95,7 @@ def actualizar_medico(
 
     cambios = datos.model_dump(exclude_unset=True)
     campos_no_permitidos = set(cambios) - (
-        CamposActualizablesMedico | {"direccion"}
+        CamposActualizablesMedico | {"direccion", "especialidades", "subespecialidades", "asociaciones"}
     )
     if campos_no_permitidos:
         nombres = ", ".join(sorted(campos_no_permitidos))
@@ -115,11 +115,17 @@ def actualizar_medico(
                 f"Campos de dirección no permitidos: {nombres}."
             )
 
+    # La función SQL actualizar_medico espera los datos personales dentro de "medico".
+    campos_personales = {k: v for k, v in cambios.items() if k in CamposActualizablesMedico}
+    payload = {k: v for k, v in cambios.items() if k not in CamposActualizablesMedico}
+    if campos_personales:
+        payload["medico"] = campos_personales
+
     actualizado = repositorio.actualizar_medico(
         db,
         id_medico,
         id_administrador,
-        cambios,
+        payload,
     )
     if not actualizado:
         raise MedicoNoEncontrado(
@@ -161,11 +167,14 @@ def actualizar_perfil_medico(
                 f"Campos de dirección no permitidos: {nombres}."
             )
 
+    # El contrato SQL actual no permite que un médico cambie dirección.
+    if "direccion" in cambios:
+        raise ValueError("La función SQL actual no permite cambiar dirección desde el perfil médico")
     actualizado = repositorio.actualizar_medico(
         db,
         id_medico,
         id_usuario,
-        cambios,
+        {"medico": cambios},
     )
     if not actualizado:
         raise MedicoNoEncontrado(

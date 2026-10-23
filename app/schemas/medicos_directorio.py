@@ -3,7 +3,7 @@
 from datetime import date
 from typing import Final
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 
 CamposActualizablesMedico: Final[frozenset[str]] = frozenset(
@@ -117,6 +117,22 @@ class ActualizarDireccionSolicitud(BaseModel):
     id_corregimiento: int | None = Field(default=None, ge=1)
 
 
+class CambiosRelacionesSolicitud(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    agregar: list[int] = Field(default_factory=list)
+    quitar: list[int] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validar(self):
+        for nombre in ("agregar", "quitar"):
+            valores = getattr(self, nombre)
+            if any(v <= 0 for v in valores) or len(set(valores)) != len(valores):
+                raise ValueError(f"{nombre}: IDs positivos y sin duplicados")
+        if set(self.agregar) & set(self.quitar):
+            raise ValueError("El mismo ID no puede agregarse y quitarse")
+        return self
+
+
 class ActualizarMedicoSolicitud(BaseModel):
     """Campos que la API puede recibir para actualizar un médico."""
 
@@ -135,6 +151,9 @@ class ActualizarMedicoSolicitud(BaseModel):
     celular: str | None = Field(default=None, min_length=1)
     email_personal: EmailStr | None = None
     direccion: ActualizarDireccionSolicitud | None = None
+    especialidades: CambiosRelacionesSolicitud | None = None
+    subespecialidades: CambiosRelacionesSolicitud | None = None
+    asociaciones: CambiosRelacionesSolicitud | None = None
 
 
 class ActualizarPerfilMedicoSolicitud(BaseModel):
