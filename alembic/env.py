@@ -1,4 +1,3 @@
-
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -9,6 +8,11 @@ from alembic import context
 from app.config import settings
 from app.database import Base
 import app.models
+
+from alembic_utils.replaceable_entity import register_entities
+from app.funciones.alembic_functions import cargar_funciones
+
+register_entities(cargar_funciones())
 
 
 # Configuración de Alembic

@@ -1,13 +1,3 @@
--- obtener_usuario_por_id
--- Uso: GET /auth/me
--- Parámetros: p_id_usuario integer
--- Retorna: TABLE (id_usuario integer, nombre text, correo text,numero_idoneidad text, rol text, activo boolean)
--- Errores: 'El id de usuario es obligatorio' si p_id_usuario es NULL.
--- Si el usuario no existe devuelve 0 filas.
--- nombre y numero_idoneidad salen de MEDICO; para usuarios que no son médicos vienen NULL.
--- No devuelve password_hash. Solo lee datos; no requiere transacción.
--- Invocación: SELECT * FROM obtener_usuario_por_id(:id_usuario);
-
 CREATE OR REPLACE FUNCTION obtener_usuario_por_id(p_id_usuario integer)
 RETURNS TABLE (
     id_usuario       integer,

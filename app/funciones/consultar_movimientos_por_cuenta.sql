@@ -1,4 +1,3 @@
--- FIRMA PROPUESTA: la documentación no la define todavía. Confirmar con el equipo.
 CREATE OR REPLACE FUNCTION consultar_movimientos_por_cuenta(
     p_id_cuenta    integer,
     p_fecha_inicio date DEFAULT NULL,

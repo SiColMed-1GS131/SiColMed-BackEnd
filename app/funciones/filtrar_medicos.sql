@@ -1,7 +1,3 @@
--- Los filtros son opcionales y se combinan mediante AND.
--- La paginación tiene valores predeterminados.
--- El resultado se devuelve como JSONB con items y total.
-
 CREATE OR REPLACE FUNCTION filtrar_medicos(
     p_apellido              TEXT DEFAULT NULL,
     p_id_especialidad       INTEGER DEFAULT NULL,

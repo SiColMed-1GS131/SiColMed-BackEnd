@@ -1,4 +1,3 @@
--- DISEÑO PENDIENTE (decisión 5): esta versión recibe las líneas del asiento como JSON.
 CREATE OR REPLACE FUNCTION registrar_movimiento(
     p_fecha       date,
     p_descripcion text,
