@@ -4,7 +4,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.repositories import solicitudes_cambio as repo
-from app.schemas.solicitudes_cambio import CambioSolicitado
+from app.schemas.solicitudes_cambio import CambioRelacionSolicitado, CambioSolicitado
 
 
 def listar_solicitudes(db: Session, estado: str | None) -> list[dict[str, Any]]:
@@ -12,18 +12,24 @@ def listar_solicitudes(db: Session, estado: str | None) -> list[dict[str, Any]]:
     return repo.listar_solicitudes_cambio(db, estado)
 
 
-def armar_cambios(cambios: list[CambioSolicitado]) -> dict[str, dict[str, str]]:
-    """Convierte la lista de cambios en el diccionario por campo que espera BD.
-
-    La función de BD completa valor_anterior y el estado PENDIENTE inicial, 
-    así que aquí solo se envía valor_nuevo. Los campos repetidos ya los 
-    rechaza el schema SolicitudCambioCrear.
-    """
-    return {c.campo: {"valor_nuevo": c.valor_nuevo} for c in cambios}
+def armar_cambios(
+    cambios: list[CambioSolicitado | CambioRelacionSolicitado],
+) -> dict[str, dict[str, Any]]:
+    """Convierte los cambios al objeto JSONB que espera la función de BD."""
+    normalizados: dict[str, dict[str, Any]] = {}
+    for cambio in cambios:
+        if isinstance(cambio, CambioRelacionSolicitado):
+            normalizados[cambio.campo] = {
+                "agregar": cambio.agregar,
+                "quitar": cambio.quitar,
+            }
+        else:
+            normalizados[cambio.campo] = {"valor_nuevo": cambio.valor_nuevo}
+    return normalizados
 
 
 def crear_solicitud(
-    db: Session, id_medico: int, cambios: list[CambioSolicitado]
+    db: Session, id_medico: int, cambios: list[CambioSolicitado | CambioRelacionSolicitado]
 ) -> int:
     """Crea una solicitud de cambio para el médico indicado.
 

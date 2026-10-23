@@ -18,7 +18,7 @@ def listar_solicitudes_cambio(
 
 
 def crear_solicitud_cambio(
-    db: Session, id_medico: int, cambios: dict[str, dict[str, str]]
+    db: Session, id_medico: int, cambios: dict[str, dict[str, Any]]
 ) -> int:
     """Llama a crear_solicitud_cambio(id_medico, cambios).
 

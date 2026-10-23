@@ -1,7 +1,7 @@
 """Solicitud de cambio de un campo en la base de datos."""
 from datetime import datetime
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt, model_validator
 
 EstadoDecision = Literal['APROBADO', 'RECHAZADO']
 EstadoSolicitud = Literal['PENDIENTE', 'PROCESADO']
@@ -19,6 +19,22 @@ class CambioSolicitado(BaseModel):
     valor_nuevo: str
 
 
+class CambioRelacionSolicitado(BaseModel):
+    """Operaciones para agregar o quitar una relación profesional."""
+    model_config = ConfigDict(extra='forbid')
+    campo: Literal['especialidades', 'subespecialidades', 'asociaciones']
+    agregar: list[PositiveInt]
+    quitar: list[PositiveInt]
+
+    @model_validator(mode='after')
+    def validar_operaciones(self):
+        if not self.agregar and not self.quitar:
+            raise ValueError('Debe indicar al menos un identificador para agregar o quitar.')
+        if set(self.agregar) & set(self.quitar):
+            raise ValueError('No se puede agregar y quitar el mismo identificador.')
+        return self
+
+
 class SolicitudCambioCrear(BaseModel):
     """Solicitud de cambio enviada por el médico."""
     model_config = ConfigDict(
@@ -26,13 +42,12 @@ class SolicitudCambioCrear(BaseModel):
         json_schema_extra={
             'examples': [{
                 'cambios': [
-                    {'campo': 'celular', 'valor_nuevo': '6000-2222'},
-                    {'campo': 'email_personal', 'valor_nuevo': 'ana.perez@example.com'}
+                    {'campo': 'especialidades', 'agregar': [3], 'quitar': []}
                 ]
             }]
         }
     )
-    cambios: list[CambioSolicitado] = Field(min_length=1)
+    cambios: list[CambioSolicitado | CambioRelacionSolicitado] = Field(min_length=1)
 
     @model_validator(mode='after')
     def sin_campos_repetidos(self):
