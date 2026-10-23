@@ -45,7 +45,7 @@ def cargar_funciones():
             r"(?is)^CREATE\s+OR\s+REPLACE\s+FUNCTION\s+"
             r"(?:public\s*\.\s*)?"
             r"([a-zA-Z_][a-zA-Z0-9_]*)\s*"
-            r"\(.*?\)\s*(RETURNS\b.*)$",
+            r"\((.*?)\)\s*(RETURNS\b.*)$",
             sql,
         )
 
@@ -55,12 +55,15 @@ def cargar_funciones():
             )
 
         nombre = coincidencia.group(1)
-        definicion = coincidencia.group(2).strip()
+        argumentos = coincidencia.group(2).strip()
+        definicion = coincidencia.group(3).strip()
 
-        firma = firmas_bd.get(nombre.lower())
+        firma_existente = firmas_bd.get(nombre.lower())
 
-        if firma is None:
-            continue
+        if firma_existente is not None:
+            firma = firma_existente
+        else:
+            firma = f"{nombre}({argumentos})"
 
         funciones.append(
             PGFunction(
