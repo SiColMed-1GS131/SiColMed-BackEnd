@@ -42,7 +42,7 @@ class SolicitudCambioCrear(BaseModel):
         json_schema_extra={
             'examples': [{
                 'cambios': [
-                    {'campo': 'especialidades', 'agregar': [3], 'quitar': []}
+                    {'campo': 'medico:17:cedula', 'valor_nuevo': '8-123-456'}
                 ]
             }]
         }
@@ -64,7 +64,7 @@ class SolicitudCambioProcesar(BaseModel):
         json_schema_extra={
             'examples': [{
                 'decisiones': {
-                    'celular': {'estado': 'APROBADO'},
+                    'medico:17:cedula': {'estado': 'APROBADO'},
                 },
                 'comentario': 'Cambio revisado.',
             }]
@@ -85,9 +85,9 @@ class SolicitudCambioItem(BaseModel):
                 'estado': 'PENDIENTE',
                 'fecha_solicitud': '2026-10-18T09:30:00',
                 'cambios': {
-                    'celular': {
-                        'valor_anterior': '6000-1111',
-                        'valor_nuevo': '6000-2222',
+                    'medico:17:cedula': {
+                        'valor_anterior': '8-123-456',
+                        'valor_nuevo': '8-123-789',
                         'estado': 'PENDIENTE',
                     }
                 },
