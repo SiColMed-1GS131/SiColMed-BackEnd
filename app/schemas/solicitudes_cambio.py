@@ -1,7 +1,36 @@
 """Solicitud de cambio de un campo en la base de datos."""
+import re
 from datetime import datetime
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt, model_validator
+
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PositiveInt,
+    field_validator,
+    model_validator,
+)
+
+# Espejo de las reglas de BD; BD es la autoridad. Mantener sincronizado.
+TABLAS_CAMBIO_PERMITIDAS = frozenset({
+    "medico",
+    "direccion",
+    "lugar_trabajo",
+    "estudio_medico",
+    "certificacion",
+})
+CAMPOS_PERSONALES_MEDICO = frozenset({
+    "primer_nombre",
+    "segundo_nombre",
+    "apellido_paterno",
+    "apellido_materno",
+    "foto",
+    "fecha_nacimiento",
+    "telefono_residencial",
+    "celular",
+    "email_personal",
+})
 
 EstadoDecision = Literal['APROBADO', 'RECHAZADO']
 EstadoSolicitud = Literal['PENDIENTE', 'PROCESADO']
@@ -17,6 +46,24 @@ class CambioSolicitado(BaseModel):
     model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
     campo: str = Field(min_length=1)
     valor_nuevo: str
+
+    @field_validator("campo")
+    @classmethod
+    def validar_campo(cls, campo: str) -> str:
+        partes = campo.split(":")
+        if len(partes) != 3:
+            raise ValueError("El campo debe tener formato tabla:id_registro:campo.")
+
+        tabla, id_registro, nombre_campo = partes
+        if tabla not in TABLAS_CAMBIO_PERMITIDAS:
+            raise ValueError("La tabla indicada no está permitida.")
+        if not re.fullmatch(r"[0-9]+", id_registro) or int(id_registro) < 1:
+            raise ValueError("El id_registro debe ser un entero positivo.")
+        if not nombre_campo.strip():
+            raise ValueError("El nombre del campo no puede estar vacío.")
+        if tabla == "medico" and nombre_campo in CAMPOS_PERSONALES_MEDICO:
+            raise ValueError("El campo personal debe actualizarse directamente.")
+        return campo
 
 
 class CambioRelacionSolicitado(BaseModel):
