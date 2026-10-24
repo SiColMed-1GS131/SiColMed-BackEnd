@@ -57,7 +57,7 @@ class CambioSolicitado(BaseModel):
         tabla, id_registro, nombre_campo = partes
         if tabla not in TABLAS_CAMBIO_PERMITIDAS:
             raise ValueError("La tabla indicada no está permitida.")
-        if not re.fullmatch(r"[0-9]+", id_registro) or int(id_registro) < 1:
+        if not re.fullmatch(r"[1-9][0-9]*", id_registro):
             raise ValueError("El id_registro debe ser un entero positivo.")
         if not nombre_campo.strip():
             raise ValueError("El nombre del campo no puede estar vacío.")
@@ -89,7 +89,8 @@ class SolicitudCambioCrear(BaseModel):
         json_schema_extra={
             'examples': [{
                 'cambios': [
-                    {'campo': 'medico:17:cedula', 'valor_nuevo': '8-123-456'}
+                    {'campo': 'medico:17:cedula', 'valor_nuevo': '8-123-456'},
+                    {'campo': 'especialidades', 'agregar': [3], 'quitar': []},
                 ]
             }]
         }
