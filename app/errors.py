@@ -15,6 +15,10 @@ class MedicoNoEncontrado(Exception):
     """El médico solicitado no existe o no puede ser actualizado."""
 
 
+class UsuarioSinMedico(Exception):
+    """El usuario autenticado no está asociado a un médico."""
+
+
 def _obtener_mensaje_bd(error: DBAPIError) -> str:
     """Obtiene el mensaje principal enviado por PostgreSQL."""
     diagnostico: Any = getattr(error.orig, "diag", None)

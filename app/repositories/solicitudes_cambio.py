@@ -6,6 +6,9 @@ from sqlalchemy.orm import Session
 from app.repositories.base import Arg, llamar_escalar, llamar_tabla
 
 
+FUNCION_OBTENER_ID_MEDICO_POR_USUARIO = "obtener_id_medico_por_usuario"
+
+
 def listar_solicitudes_cambio(
     db: Session, estado: str | None
 ) -> list[dict[str, Any]]:
@@ -14,6 +17,15 @@ def listar_solicitudes_cambio(
         db,
         "listar_solicitudes_cambio",
         {"estado": Arg(estado, "text")},
+    )
+
+
+def obtener_id_medico_por_usuario(db: Session, id_usuario: int) -> int | None:
+    """PENDIENTE DE CONFIRMAR CON BD: función y retorno del médico asociado."""
+    return llamar_escalar(
+        db,
+        FUNCION_OBTENER_ID_MEDICO_POR_USUARIO,
+        {"id_usuario": Arg(id_usuario, "integer")},
     )
 
 

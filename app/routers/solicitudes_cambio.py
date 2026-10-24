@@ -1,16 +1,49 @@
 """Endpoints de solicitudes de cambio."""
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas.solicitudes_cambio import EstadoSolicitud, SolicitudCambioItem
+from app.errors import UsuarioSinMedico
+from app.schemas.solicitudes_cambio import (
+    EstadoSolicitud,
+    SolicitudCambioCreada,
+    SolicitudCambioCrear,
+    SolicitudCambioItem,
+    SolicitudCambioProcesar,
+)
 from app.services import solicitudes_cambio as service
-from app.schemas.solicitudes_cambio import SolicitudCambioProcesar
 from app.security.auth import get_usuario_actual, requiere_rol
 
 
-
 router = APIRouter(prefix="/solicitudes-cambio", tags=["Solicitudes de cambio"])
+
+
+@router.post(
+    "",
+    response_model=SolicitudCambioCreada,
+    status_code=status.HTTP_201_CREATED,
+    summary="Crear solicitud de cambio",
+    description="El médico autenticado solicita cambios en su perfil.",
+    responses={
+        400: {"description": "Error devuelto por la base de datos"},
+        403: {"description": "El usuario autenticado no está asociado a un médico."},
+    },
+)
+def crear_solicitud(
+    solicitud: SolicitudCambioCrear,
+    usuario=Depends(requiere_rol("medico")),
+    db: Session = Depends(get_db),
+) -> SolicitudCambioCreada:
+    try:
+        id_solicitud_cambio = service.crear_solicitud(
+            db, usuario, solicitud.cambios
+        )
+    except UsuarioSinMedico as error:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="El usuario autenticado no está asociado a un médico.",
+        ) from error
+    return SolicitudCambioCreada(id_solicitud_cambio=id_solicitud_cambio)
 
 
 @router.get(
