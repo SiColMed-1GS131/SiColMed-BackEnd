@@ -22,7 +22,6 @@ app.include_router(solicitudes_cambio.router)
 app.include_router(catalogos.router)
 app.include_router(medicos.router)
 
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in settings.cors_origins.split(",")],
