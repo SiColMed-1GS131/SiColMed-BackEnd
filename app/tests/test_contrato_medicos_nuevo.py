@@ -15,13 +15,16 @@ from app.repositories.medicos import registrar_medico
 
 def datos_registro():
     return {
-        "numero_idoneidad": "I123", "numero_registro_medico": "RM123", "cedula": "8-100-200",
-        "primer_nombre": "Ana", "apellido_paterno": "Perez", "fecha_nacimiento": "1990-01-01",
+        "medico": {
+            "numero_idoneidad": "I123", "numero_registro_medico": "RM123",
+            "cedula": "8-100-200", "primer_nombre": "Ana",
+            "apellido_paterno": "Perez", "fecha_nacimiento": "1990-01-01",
+        },
         "direccion": {"id_corregimiento": 1},
         "especialidades": {"agregar": [1, 2], "quitar": []},
         "subespecialidades": {"agregar": [3], "quitar": []},
         "asociaciones": {"agregar": [1], "quitar": []},
-        "estudios": [], "trabajos": [], "certificaciones": [], "otras_organizaciones": [],
+        "estudio_medico": [], "lugar_trabajo": [], "certificaciones": [],
     }
 
 
@@ -29,6 +32,55 @@ def test_post_acepta_objetos_agregar_quitar():
     m = MedicoRegistro.model_validate(datos_registro())
     assert m.especialidades.agregar == [1, 2]
     assert m.subespecialidades.agregar == [3]
+
+
+def test_post_acepta_formato_completo_agrupado():
+    datos = datos_registro()
+    datos["medico"].update(
+        {
+            "segundo_nombre": "Maria",
+            "apellido_materno": "Rodriguez",
+            "foto": "https://ejemplo.com/fotos/ana-gonzalez.jpg",
+            "telefono_residencial": "300-1234",
+            "celular": "6000-1234",
+            "email_personal": "ana.gonzalez@ejemplo.com",
+        }
+    )
+    datos["lugar_trabajo"] = [
+        {
+            "id_lugar_trabajo": 1,
+            "empresa_institucion": "Hospital Central",
+            "cargo": "Medica especialista",
+            "telefono_trabajo": "300-5678",
+            "email_laboral": "ana.gonzalez@hospital.com",
+        }
+    ]
+    datos["estudio_medico"] = [
+        {
+            "id_estudio": 1,
+            "tipo_estudio": "Licenciatura",
+            "titulo": "Medicina General",
+            "institucion": "Universidad Nacional",
+            "lugar": "Panama",
+            "fecha": "2015-12-15",
+        }
+    ]
+    datos["certificaciones"] = [
+        {
+            "id_certificacion": 1,
+            "vigente": True,
+            "fecha_obtencion": "2025-01-15",
+            "puntaje": 95,
+            "fecha_expiracion": "2028-01-15",
+        }
+    ]
+
+    medico = MedicoRegistro.model_validate(datos)
+
+    assert medico.medico.numero_idoneidad == "I123"
+    assert medico.lugar_trabajo[0].id_lugar_trabajo == 1
+    assert medico.estudio_medico[0].id_estudio == 1
+    assert medico.certificaciones[0].vigente is True
 
 
 def test_post_rechaza_quitar_en_alta():

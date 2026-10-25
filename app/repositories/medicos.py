@@ -27,26 +27,34 @@ def _crear_direccion(db: Session, datos: DireccionRegistro) -> int:
     return value
 
 def registrar_medico(db: Session, medico: MedicoRegistro) -> int:
-    if medico.certificado_idoneidad_pdf or any(c.certificado_pdf for c in medico.certificaciones):
-        raise ContratoBDPendiente("BD debe definir almacenamiento de certificados PDF antes de aceptarlos")
-    if medico.otras_organizaciones:
-        raise ContratoBDPendiente("BD debe definir almacenamiento de organizaciones no catalogadas")
+    datos_medico = medico.medico
+    if datos_medico.certificado_idoneidad_pdf or any(
+        cert.certificado_pdf for cert in medico.certificaciones
+    ):
+        raise ContratoBDPendiente(
+            "BD debe definir almacenamiento de certificados PDF antes de aceptarlos"
+        )
 
     direccion = medico.direccion
     # Orden exacto de la firma disponible en app/funciones/registrar_medico.sql.
     params = {
-        "p_numero_idoneidad": Arg(medico.numero_idoneidad, "text"),
-        "p_numero_registro_medico": Arg(medico.numero_registro_medico, "text"),
-        "p_cedula": Arg(medico.cedula, "text"),
-        "p_primer_nombre": Arg(medico.primer_nombre, "text"),
-        "p_apellido_paterno": Arg(medico.apellido_paterno, "text"),
-        "p_fecha_nacimiento": Arg(medico.fecha_nacimiento, "date"),
-        "p_segundo_nombre": Arg(medico.segundo_nombre, "text"),
-        "p_apellido_materno": Arg(medico.apellido_materno, "text"),
-        "p_telefono_residencial": Arg(medico.telefono_residencial, "text"),
-        "p_celular": Arg(medico.celular, "text"),
-        "p_email_personal": Arg(str(medico.email_personal) if medico.email_personal else None, "text"),
-        "p_foto": Arg(medico.foto, "text"),
+        "p_numero_idoneidad": Arg(datos_medico.numero_idoneidad, "text"),
+        "p_numero_registro_medico": Arg(datos_medico.numero_registro_medico, "text"),
+        "p_cedula": Arg(datos_medico.cedula, "text"),
+        "p_primer_nombre": Arg(datos_medico.primer_nombre, "text"),
+        "p_apellido_paterno": Arg(datos_medico.apellido_paterno, "text"),
+        "p_fecha_nacimiento": Arg(datos_medico.fecha_nacimiento, "date"),
+        "p_segundo_nombre": Arg(datos_medico.segundo_nombre, "text"),
+        "p_apellido_materno": Arg(datos_medico.apellido_materno, "text"),
+        "p_telefono_residencial": Arg(datos_medico.telefono_residencial, "text"),
+        "p_celular": Arg(datos_medico.celular, "text"),
+        "p_email_personal": Arg(
+            str(datos_medico.email_personal)
+            if datos_medico.email_personal
+            else None,
+            "text",
+        ),
+        "p_foto": Arg(datos_medico.foto, "text"),
         "p_apartado_postal": Arg(direccion.apartado_postal, "text"),
         "p_calle": Arg(direccion.calle, "text"),
         "p_edificio": Arg(direccion.edificio, "text"),
@@ -58,12 +66,19 @@ def registrar_medico(db: Session, medico: MedicoRegistro) -> int:
         id_medico = llamar_escalar(db, "registrar_medico", params)
         if not isinstance(id_medico, int) or id_medico <= 0:
             raise RuntimeError("registrar_medico no devolvió un id_medico válido")
-        for estudio in medico.estudios:
+        for estudio in medico.estudio_medico:
             db.execute(text("""INSERT INTO estudio_medico
                 (id_medico, tipo_estudio, titulo, institucion, lugar, fecha)
                 VALUES (:id_medico, :tipo_estudio, :titulo, :institucion, :lugar, :fecha)"""),
-                {"id_medico": id_medico, **estudio.model_dump()})
-        for trabajo in medico.trabajos:
+                {
+                    "id_medico": id_medico,
+                    **estudio.model_dump(exclude={"id_estudio"}),
+                })
+        for trabajo in medico.lugar_trabajo:
+            if trabajo.direccion is None:
+                raise ContratoBDPendiente(
+                    "Cada lugar de trabajo debe incluir una dirección"
+                )
             id_direccion = _crear_direccion(db, trabajo.direccion)
             db.execute(text("""INSERT INTO lugar_trabajo
                 (id_medico, empresa_institucion, cargo, telefono_trabajo, email_laboral, id_direccion)

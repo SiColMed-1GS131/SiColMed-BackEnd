@@ -167,14 +167,24 @@ def actualizar_perfil_medico(
                 f"Campos de dirección no permitidos: {nombres}."
             )
 
-    # El contrato SQL actual no permite que un médico cambie dirección.
+    # La función SQL debe aceptar "direccion" para el rol medico y conservar
+    # la validación de propietario del perfil.
+    campos_personales = {
+        campo: valor
+        for campo, valor in cambios.items()
+        if campo != "direccion"
+    }
+    payload = {}
+    if campos_personales:
+        payload["medico"] = campos_personales
     if "direccion" in cambios:
-        raise ValueError("La función SQL actual no permite cambiar dirección desde el perfil médico")
+        payload["direccion"] = cambios["direccion"]
+
     actualizado = repositorio.actualizar_medico(
         db,
         id_medico,
         id_usuario,
-        {"medico": cambios},
+        payload,
     )
     if not actualizado:
         raise MedicoNoEncontrado(

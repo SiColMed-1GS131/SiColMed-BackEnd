@@ -222,3 +222,35 @@ def test_actualizar_perfil_medico_envia_direccion():
     assert repositorio.datos == {
         "direccion": {"id_corregimiento": 5},
     }
+
+
+def test_actualizar_perfil_medico_separa_datos_personales_y_direccion():
+    from app.schemas.medicos_directorio import ActualizarPerfilMedicoSolicitud
+
+    class Repositorio:
+        def __init__(self):
+            self.datos = None
+
+        def actualizar_medico(self, db, id_medico, id_usuario, datos):
+            self.datos = datos
+            return True
+
+    repositorio = Repositorio()
+    actualizar_perfil_medico(
+        None,
+        1,
+        15,
+        ActualizarPerfilMedicoSolicitud(
+            primer_nombre="Ana",
+            direccion={"calle": "Calle Principal", "id_corregimiento": 5},
+        ),
+        repositorio,
+    )
+
+    assert repositorio.datos == {
+        "medico": {"primer_nombre": "Ana"},
+        "direccion": {
+            "calle": "Calle Principal",
+            "id_corregimiento": 5,
+        },
+    }
