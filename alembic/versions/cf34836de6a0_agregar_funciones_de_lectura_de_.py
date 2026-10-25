@@ -27,21 +27,21 @@ def upgrade() -> None:
         signature="listar_asociaciones()",
         definition='RETURNS TABLE (\n    id_asociacion INTEGER,\n    nombre TEXT\n)\nLANGUAGE sql\nSTABLE\nAS $$\n    SELECT a.id_asociacion, a.nombre\n    FROM asociacion AS a\n    ORDER BY a.nombre ASC;\n$$'
     )
-    op.create_entity(public_listar_asociaciones)
+    op.replace_entity(public_listar_asociaciones)
 
     public_listar_especialidades = PGFunction(
         schema="public",
         signature="listar_especialidades()",
         definition='RETURNS TABLE (\n    id_especialidad INTEGER,\n    nombre TEXT\n)\nLANGUAGE sql\nSTABLE\nAS $$\n    SELECT e.id_especialidad, e.nombre\n    FROM especialidad AS e\n    ORDER BY e.nombre ASC;\n$$'
     )
-    op.create_entity(public_listar_especialidades)
+    op.replace_entity(public_listar_especialidades)
 
     public_listar_subespecialidades = PGFunction(
         schema="public",
         signature="listar_subespecialidades(p_id_especialidad INTEGER DEFAULT NULL)",
         definition='RETURNS TABLE (\n    id_subespecialidad INTEGER,\n    id_especialidad INTEGER,\n    nombre TEXT\n)\nLANGUAGE sql\nSTABLE\nAS $$\n    SELECT\n        s.id_subespecialidad,\n        s.id_especialidad,\n        s.nombre\n    FROM subespecialidad AS s\n    WHERE p_id_especialidad IS NULL\n       OR s.id_especialidad = p_id_especialidad\n    ORDER BY s.nombre ASC;\n$$'
     )
-    op.create_entity(public_listar_subespecialidades)
+    op.replace_entity(public_listar_subespecialidades)
 
     # ### end Alembic commands ###
 
