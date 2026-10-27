@@ -12,7 +12,12 @@ from app.database import get_db
 from app.errors import manejar_error_bd
 from app.routers.medicos_directorio import router as router_medicos_directorio
 from app.routers import solicitudes_cambio, catalogos
+<<<<<<< Updated upstream
 from app.routers import medicos
+=======
+from app.routers import medicos, auth
+
+>>>>>>> Stashed changes
 
 app = FastAPI(title="API Certificaciones Médicas - Panamá")
 app.add_exception_handler(DBAPIError, manejar_error_bd)
@@ -20,6 +25,10 @@ app.include_router(router_medicos_directorio)
 app.include_router(solicitudes_cambio.router)
 app.include_router(catalogos.router)
 app.include_router(medicos.router)
+<<<<<<< Updated upstream
+=======
+app.include_router(auth.router)
+>>>>>>> Stashed changes
 
 app.add_middleware(
     CORSMiddleware,

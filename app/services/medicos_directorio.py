@@ -167,14 +167,34 @@ def actualizar_perfil_medico(
                 f"Campos de dirección no permitidos: {nombres}."
             )
 
+<<<<<<< Updated upstream
     # El contrato SQL actual no permite que un médico cambie dirección.
     if "direccion" in cambios:
         raise ValueError("La función SQL actual no permite cambiar dirección desde el perfil médico")
+=======
+    # La función SQL debe aceptar "direccion" para el rol medico y conservar
+    # la validación de propietario del perfil.
+    campos_personales = {
+        campo: valor
+        for campo, valor in cambios.items()
+        if campo != "direccion"
+    }
+    payload = {}
+    if campos_personales:
+        payload["medico"] = campos_personales
+    if "direccion" in cambios:
+        payload["direccion"] = cambios["direccion"]
+
+>>>>>>> Stashed changes
     actualizado = repositorio.actualizar_medico(
         db,
         id_medico,
         id_usuario,
+<<<<<<< Updated upstream
         {"medico": cambios},
+=======
+        payload,
+>>>>>>> Stashed changes
     )
     if not actualizado:
         raise MedicoNoEncontrado(
