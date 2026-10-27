@@ -11,9 +11,18 @@ from app.config import settings
 from app.database import get_db
 from app.errors import manejar_error_bd
 from app.routers import cuentas
+from app.routers.medicos_directorio import router as router_medicos_directorio
+from app.routers import solicitudes_cambio, catalogos
+from app.routers import medicos
+
 
 app = FastAPI(title="API Certificaciones Médicas - Panamá")
 app.add_exception_handler(DBAPIError, manejar_error_bd)
+app.include_router(router_medicos_directorio)
+app.include_router(solicitudes_cambio.router)
+app.include_router(catalogos.router)
+app.include_router(medicos.router)
+app.include_router(cuentas.router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,8 +31,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Routers por módulo
-app.include_router(cuentas.router)
 
 # Métodos principales
 @app.get("/", include_in_schema=False)
