@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.schemas.solicitudes_cambio import EstadoSolicitud, SolicitudCambioItem
+from app.security import roles
+from app.security.auth import UsuarioAutenticado, requiere_rol
 from app.services import solicitudes_cambio as service
 
 router = APIRouter(prefix="/solicitudes-cambio", tags=["Solicitudes de cambio"])
@@ -23,7 +25,9 @@ def listar_solicitudes(
         description="Filtra por estado general de la solicitud.",
         examples=["PENDIENTE"],
     ),
+    _administrador: UsuarioAutenticado = Depends(
+        requiere_rol(roles.ADMIN_CMP)
+    ),
     db: Session = Depends(get_db),
 ):
-    # PENDIENTE: aquí va la dependencia de permisos (requiere_rol), solo administrador.
     return service.listar_solicitudes(db, estado)

@@ -7,6 +7,9 @@ from sqlalchemy.exc import DBAPIError
 
 from app.main import app
 from app.repositories.cuentas import CuentasRepository, get_cuentas_repository
+from app.security.auth import get_usuario_actual
+from app.security.jwt import UsuarioAutenticado
+from app.security import roles
 
 CUENTA_VALIDA = {"nombre": "Caja general", "tipo": "DEBITO", "activa": True}
 
@@ -59,6 +62,15 @@ def repo(cliente):
     falso = RepositorioCuentasFalso()
     app.dependency_overrides[get_cuentas_repository] = lambda: falso
     return falso
+
+
+@pytest.fixture(autouse=True)
+def usuario_autorizado():
+    app.dependency_overrides[get_usuario_actual] = lambda: UsuarioAutenticado(
+        id_usuario=1,
+        rol=roles.ADMIN_CMP,
+    )
+    yield
 
 
 # --- GET /cuentas -----------------------------------------------------------

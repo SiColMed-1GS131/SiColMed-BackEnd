@@ -19,11 +19,21 @@ PATCH /medicos/{id_medico}/perfil
 PATCH /medicos/{id_medico}
     Rol: admin_cmp
     Actor: administrador que aplica un cambio aprobado
+
+GET /medicos/{id_medico}
+    Roles: medico, admin_cmp
+    Actor: el propio médico o un administrador
 ```
 
 La autorización del endpoint no reemplaza las validaciones de Base de Datos.
 La función SQL debe validar nuevamente el actor, el médico, los campos y las
 reglas de integridad.
+
+El endpoint `GET /medicos/{id_medico}` requiere autenticación. Un usuario con
+rol `medico` solo puede consultar el perfil asociado a su `id_medico`; un
+usuario con rol `admin_cmp` puede consultar cualquier perfil autorizado.
+Para aplicar esta regla, el JWT de un médico debe incluir el claim
+`id_medico`. Los tokens administrativos no necesitan ese claim.
 
 ## Firma única de Base de Datos
 

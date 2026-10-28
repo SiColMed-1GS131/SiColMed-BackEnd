@@ -5,12 +5,21 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Path, Query, status
 
 from app.schemas.cuentas import Cuenta, CuentaCrear, CuentaEditar, CuentaEliminada
+from app.security import roles
+from app.security.auth import requiere_rol
 from app.services.cuentas import CuentasService, get_cuentas_service
 
-# PENDIENTE: proteger con requiere_rol cuando Login y permisos lo entregue.
-# Según SiColMed.pdf, el Módulo 5 lo usan el Tesorero y el Administrador de la
-# Asociación; los nombres exactos de los roles están por confirmar (P4-08).
-router = APIRouter(prefix="/cuentas", tags=["Cuentas contables"])
+_requiere_permiso_cuentas = requiere_rol(
+    roles.ADMIN_CMP,
+    roles.TESORERO,
+    roles.ADMIN_ASOCIACION,
+)
+
+router = APIRouter(
+    prefix="/cuentas",
+    tags=["Cuentas contables"],
+    dependencies=[Depends(_requiere_permiso_cuentas)],
+)
 
 Servicio = Annotated[CuentasService, Depends(get_cuentas_service)]
 IdCuenta = Annotated[int, Path(gt=0, description="Identificador de la cuenta")]

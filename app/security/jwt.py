@@ -37,6 +37,7 @@ class UsuarioAutenticado:
 
     id_usuario: int
     rol: str
+    id_medico: int | None = None
 
 
 def _clave_secreta() -> str:
@@ -49,7 +50,11 @@ def _clave_secreta() -> str:
     return clave
 
 
-def crear_token_acceso(id_usuario: int, rol: str) -> str:
+def crear_token_acceso(
+    id_usuario: int,
+    rol: str,
+    id_medico: int | None = None,
+) -> str:
     """Firma un token de acceso que vence en JWT_ACCESS_TOKEN_EXPIRE_MINUTES."""
     ahora = datetime.now(timezone.utc)
     claims = {
@@ -58,6 +63,10 @@ def crear_token_acceso(id_usuario: int, rol: str) -> str:
         "iat": ahora,
         "exp": ahora + timedelta(minutes=settings.jwt_access_token_expire_minutes),
     }
+    if id_medico is not None:
+        if id_medico < 1:
+            raise ValueError("id_medico debe ser mayor que cero.")
+        claims["id_medico"] = id_medico
     return jwt.encode(claims, _clave_secreta(), algorithm=settings.jwt_algorithm)
 
 
@@ -80,4 +89,13 @@ def decodificar_token(token: str) -> UsuarioAutenticado:
         raise TokenInvalido("Token inválido.")
     if not isinstance(rol, str) or not rol:
         raise TokenInvalido("Token inválido.")
-    return UsuarioAutenticado(id_usuario=int(sub), rol=rol)
+    id_medico = claims.get("id_medico")
+    if id_medico is not None and (
+        not isinstance(id_medico, int) or id_medico < 1
+    ):
+        raise TokenInvalido("Token inválido.")
+    return UsuarioAutenticado(
+        id_usuario=int(sub),
+        rol=rol,
+        id_medico=id_medico,
+    )
