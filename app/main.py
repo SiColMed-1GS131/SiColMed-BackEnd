@@ -13,6 +13,7 @@ from app.errors import manejar_error_bd
 from app.routers.medicos_directorio import router as router_medicos_directorio
 from app.routers import solicitudes_cambio, catalogos
 from app.routers import medicos
+from app.routers import auth
 
 
 app = FastAPI(title="API Certificaciones Médicas - Panamá")
@@ -21,6 +22,7 @@ app.include_router(router_medicos_directorio)
 app.include_router(solicitudes_cambio.router)
 app.include_router(catalogos.router)
 app.include_router(medicos.router)
+app.include_router(auth.router)
 
 app.add_middleware(
     CORSMiddleware,
