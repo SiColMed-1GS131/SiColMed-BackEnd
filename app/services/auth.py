@@ -14,6 +14,8 @@ pwdlib ya está en requirements.txt:
 """
 
 from fastapi import Depends
+from pwdlib import PasswordHash
+from sqlalchemy.exc import DBAPIError
 
 from app.repositories.auth import AuthRepository, get_auth_repository
 from app.schemas.auth import (
@@ -22,10 +24,31 @@ from app.schemas.auth import (
     TokenRespuesta,
     UsuarioRespuesta,
 )
+from app.security import roles
+from app.security.jwt import crear_token_acceso
 
-# TODO: definir aquí las excepciones que el router traduce a HTTP, por ejemplo
-# CredencialesInvalidas (401), UsuarioInactivo (403), MedicoNoEncontrado (404)
-# y CuentaYaRegistrada (409).
+class CredencialesInvalidas(Exception):
+    pass
+
+
+class UsuarioInactivo(Exception):
+    pass
+
+
+class UsuarioNoEncontrado(Exception):
+    pass
+
+
+class MedicoNoEncontrado(Exception):
+    pass
+
+
+class CuentaYaRegistrada(Exception):
+    pass
+
+
+_hasher = PasswordHash.recommended()
+_hash_relleno = _hasher.hash("contraseña-no-válida-para-login")
 
 
 class AuthService:
@@ -40,7 +63,27 @@ class AuthService:
         2. id_usuario = repositorio.crear_cuenta_medico(idoneidad, correo, hash).
         3. Devolver TokenRespuesta(access_token=crear_token_acceso(id_usuario, roles.MEDICO)).
         """
-        raise NotImplementedError("Pendiente: registrar")
+        password_hash = _hasher.hash(datos.password)
+        try:
+            id_usuario = self.repositorio.crear_cuenta_medico(
+                datos.numero_idoneidad,
+                str(datos.correo),
+                password_hash,
+            )
+        except DBAPIError as error:
+            diagnostico = getattr(getattr(error, "orig", None), "diag", None)
+            mensaje = str(
+                getattr(diagnostico, "message_primary", None)
+                or getattr(error, "orig", error)
+            ).lower()
+            if "no existe un médico" in mensaje:
+                raise MedicoNoEncontrado from error
+            if "ya tiene una cuenta" in mensaje or "ya está registrado" in mensaje:
+                raise CuentaYaRegistrada from error
+            raise
+        return TokenRespuesta(
+            access_token=crear_token_acceso(id_usuario, roles.MEDICO)
+        )
 
     def login(self, datos: LoginSolicitud) -> TokenRespuesta:
         """POST /auth/login.
@@ -56,7 +99,16 @@ class AuthService:
         Requisito del plan: bloquear 3 a 5 minutos tras 5 intentos fallidos
         (tabla LOG_INICIO_SESION); acordar con BD cómo se registra.
         """
-        raise NotImplementedError("Pendiente: login")
+        fila = self.repositorio.obtener_credenciales_usuario(str(datos.username))
+        hash_guardado = fila["password_hash"] if fila else _hash_relleno
+        password_valida = _hasher.verify(datos.password, hash_guardado)
+        if not fila or not password_valida:
+            raise CredencialesInvalidas
+        if not fila["activo"]:
+            raise UsuarioInactivo
+        return TokenRespuesta(
+            access_token=crear_token_acceso(fila["id_usuario"], fila["rol"])
+        )
 
     def obtener_usuario(self, id_usuario: int) -> UsuarioRespuesta:
         """GET /auth/me. El token ya viene validado por get_usuario_actual.
@@ -66,7 +118,20 @@ class AuthService:
         2. Sin fila → 401; activo false → 403.
         3. Construir UsuarioRespuesta con el mapeo de nombres de app/schemas/auth.py.
         """
-        raise NotImplementedError("Pendiente: obtener_usuario")
+        fila = self.repositorio.obtener_usuario_por_id(id_usuario)
+        if fila is None:
+            raise UsuarioNoEncontrado
+        if not fila["activo"]:
+            raise UsuarioInactivo
+        return UsuarioRespuesta(
+            id=fila["id_usuario"],
+            username=fila["correo"],
+            nombre=fila["nombre"],
+            email=fila["correo"],
+            idoneidad=fila["numero_idoneidad"],
+            role=fila["rol"],
+            is_active=fila["activo"],
+        )
 
 
 def get_auth_service(

@@ -12,8 +12,11 @@ Uso en un router:
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import Depends, HTTPException, status  # pyright: ignore[reportMissingImports]
+from fastapi.security import (  # pyright: ignore[reportMissingImports]
+    HTTPAuthorizationCredentials,
+    HTTPBearer,
+)
 
 from app.security.jwt import (
     TokenExpirado,
