@@ -123,7 +123,6 @@ BEGIN
     IF v_rol = 'medico'
        AND (
            p_datos ?| ARRAY[
-               'direccion',
                'lugar_trabajo',
                'estudio_medico',
                'especialidades',
@@ -133,12 +132,7 @@ BEGIN
            ]
        ) THEN
         RAISE EXCEPTION
-            'El medico solo puede modificar sus nueve campos personales';
-    END IF;
-
-    IF NOT (p_datos ? 'medico')
-       AND v_rol = 'medico' THEN
-        RAISE EXCEPTION 'Debe enviar la seccion medico';
+            'El medico solo puede modificar sus campos personales';
     END IF;
 
     -- 4. Bloquear y obtener el médico.
@@ -301,103 +295,103 @@ BEGIN
         END LOOP;
     END IF;
 
-    -- Desde este punto, solo admin_cmp puede modificar relaciones.
-    IF v_rol = 'admin_cmp' THEN
+    -- 6. DIRECCION: modificar la dirección residencial existente.
+    IF p_datos ? 'direccion' THEN
+        v_datos_dir := p_datos -> 'direccion';
 
-        -- 6. DIRECCION: modificar la dirección residencial existente.
-        IF p_datos ? 'direccion' THEN
-            v_datos_dir := p_datos -> 'direccion';
+        IF jsonb_typeof(v_datos_dir) IS DISTINCT FROM 'object'
+            OR v_datos_dir = '{}'::JSONB THEN
+            RAISE EXCEPTION
+                '"direccion" debe ser un objeto JSON no vacio';
+        END IF;
 
-            IF jsonb_typeof(v_datos_dir) IS DISTINCT FROM 'object'
-               OR v_datos_dir = '{}'::JSONB THEN
+        FOR v_campo IN
+            SELECT jsonb_object_keys(v_datos_dir)
+        LOOP
+            IF NOT (v_campo = ANY(v_campos_direccion)) THEN
                 RAISE EXCEPTION
-                    '"direccion" debe ser un objeto JSON no vacio';
+                    'Campo de direccion desconocido: %', v_campo;
+            END IF;
+        END LOOP;
+
+        v_id_direccion := v_medico.id_direccion;
+
+        PERFORM 1
+        FROM direccion
+        WHERE id_direccion = v_id_direccion
+        FOR UPDATE;
+
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'No se encontro la direccion del medico';
+        END IF;
+
+        IF v_datos_dir ? 'id_corregimiento' THEN
+            IF v_datos_dir -> 'id_corregimiento' = 'null'::JSONB THEN
+                RAISE EXCEPTION 'El corregimiento no puede ser nulo';
             END IF;
 
-            FOR v_campo IN
-                SELECT jsonb_object_keys(v_datos_dir)
-            LOOP
-                IF NOT (v_campo = ANY(v_campos_direccion)) THEN
-                    RAISE EXCEPTION
-                        'Campo de direccion desconocido: %', v_campo;
-                END IF;
-            END LOOP;
+            v_id_corregimiento :=
+                (v_datos_dir ->> 'id_corregimiento')::INTEGER;
 
-            v_id_direccion := v_medico.id_direccion;
-
-            PERFORM 1
-            FROM direccion
-            WHERE id_direccion = v_id_direccion
-            FOR UPDATE;
+            SELECT c.id_distrito, d.id_provincia
+            INTO v_id_distrito, v_id_provincia
+            FROM corregimiento c
+            JOIN distrito d ON d.id_distrito = c.id_distrito
+            WHERE c.id_corregimiento = v_id_corregimiento;
 
             IF NOT FOUND THEN
-                RAISE EXCEPTION 'No se encontro la direccion del medico';
+                RAISE EXCEPTION 'El corregimiento no existe';
             END IF;
-
-            IF v_datos_dir ? 'id_corregimiento' THEN
-                IF v_datos_dir -> 'id_corregimiento' = 'null'::JSONB THEN
-                    RAISE EXCEPTION 'El corregimiento no puede ser nulo';
-                END IF;
-
-                v_id_corregimiento :=
-                    (v_datos_dir ->> 'id_corregimiento')::INTEGER;
-
-                SELECT c.id_distrito, d.id_provincia
-                INTO v_id_distrito, v_id_provincia
-                FROM corregimiento c
-                JOIN distrito d ON d.id_distrito = c.id_distrito
-                WHERE c.id_corregimiento = v_id_corregimiento;
-
-                IF NOT FOUND THEN
-                    RAISE EXCEPTION 'El corregimiento no existe';
-                END IF;
-            END IF;
-
-            FOREACH v_campo IN ARRAY ARRAY[
-                'apartado_postal', 'calle', 'edificio', 'numero_direccion'
-            ]
-            LOOP
-                IF v_datos_dir ? v_campo
-                   AND v_datos_dir -> v_campo <> 'null'::JSONB
-                   AND BTRIM(v_datos_dir ->> v_campo) = '' THEN
-                    RAISE EXCEPTION
-                        'El campo de direccion "%" no puede estar vacio',
-                        v_campo;
-                END IF;
-            END LOOP;
-
-            UPDATE direccion
-            SET
-                apartado_postal = CASE
-                    WHEN v_datos_dir ? 'apartado_postal'
-                    THEN v_datos_dir ->> 'apartado_postal'
-                    ELSE apartado_postal END,
-                calle = CASE
-                    WHEN v_datos_dir ? 'calle'
-                    THEN v_datos_dir ->> 'calle'
-                    ELSE calle END,
-                edificio = CASE
-                    WHEN v_datos_dir ? 'edificio'
-                    THEN v_datos_dir ->> 'edificio'
-                    ELSE edificio END,
-                numero_direccion = CASE
-                    WHEN v_datos_dir ? 'numero_direccion'
-                    THEN v_datos_dir ->> 'numero_direccion'
-                    ELSE numero_direccion END,
-                id_corregimiento = CASE
-                    WHEN v_datos_dir ? 'id_corregimiento'
-                    THEN v_id_corregimiento
-                    ELSE id_corregimiento END,
-                id_distrito = CASE
-                    WHEN v_datos_dir ? 'id_corregimiento'
-                    THEN v_id_distrito ELSE id_distrito END,
-                id_provincia = CASE
-                    WHEN v_datos_dir ? 'id_corregimiento'
-                    THEN v_id_provincia ELSE id_provincia END
-            WHERE id_direccion = v_id_direccion;
-
-            v_hay_cambios := TRUE;
         END IF;
+
+        FOREACH v_campo IN ARRAY ARRAY[
+            'apartado_postal', 'calle', 'edificio', 'numero_direccion'
+        ]
+        LOOP
+            IF v_datos_dir ? v_campo
+                AND v_datos_dir -> v_campo <> 'null'::JSONB
+                AND BTRIM(v_datos_dir ->> v_campo) = '' THEN
+                RAISE EXCEPTION
+                    'El campo de direccion "%" no puede estar vacio',
+                    v_campo;
+            END IF;
+        END LOOP;
+
+        UPDATE direccion
+        SET
+            apartado_postal = CASE
+                WHEN v_datos_dir ? 'apartado_postal'
+                THEN v_datos_dir ->> 'apartado_postal'
+                ELSE apartado_postal END,
+            calle = CASE
+                WHEN v_datos_dir ? 'calle'
+                THEN v_datos_dir ->> 'calle'
+                ELSE calle END,
+            edificio = CASE
+                WHEN v_datos_dir ? 'edificio'
+                THEN v_datos_dir ->> 'edificio'
+                ELSE edificio END,
+            numero_direccion = CASE
+                WHEN v_datos_dir ? 'numero_direccion'
+                THEN v_datos_dir ->> 'numero_direccion'
+                ELSE numero_direccion END,
+            id_corregimiento = CASE
+                WHEN v_datos_dir ? 'id_corregimiento'
+                THEN v_id_corregimiento
+                ELSE id_corregimiento END,
+            id_distrito = CASE
+                WHEN v_datos_dir ? 'id_corregimiento'
+                THEN v_id_distrito ELSE id_distrito END,
+            id_provincia = CASE
+                WHEN v_datos_dir ? 'id_corregimiento'
+                THEN v_id_provincia ELSE id_provincia END
+        WHERE id_direccion = v_id_direccion;
+
+        v_hay_cambios := TRUE;
+    END IF;
+
+    -- Desde este punto, solo admin_cmp puede modificar relaciones.
+    IF v_rol = 'admin_cmp' THEN
 
         -- 7. LUGAR_TRABAJO: actualizar registros existentes.
         IF p_datos ? 'lugar_trabajo' THEN

@@ -6,47 +6,40 @@ RETURNS INTEGER
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    -- Campos que nunca deben modificarse mediante una solicitud.
-    v_no_permitidos TEXT[] := ARRAY[]::TEXT[];
-
-    -- Los datos personales se actualizan directamente.
-    v_personales TEXT[] := ARRAY[
-        'primer_nombre',
-        'segundo_nombre',
-        'apellido_paterno',
-        'apellido_materno',
-        'foto',
-        'fecha_nacimiento',
-        'telefono_residencial',
-        'celular',
-        'email_personal'
-    ];
-
     v_medico medico%ROWTYPE;
     v_usuario usuario%ROWTYPE;
 
+    v_seccion TEXT;
+    v_elemento JSONB;
     v_campo TEXT;
-    v_cambio JSONB;
-    v_partes TEXT[];
-    v_tabla TEXT;
     v_id_registro INTEGER;
-    v_nombre_campo TEXT;
-    v_id_columna TEXT;
+    v_id_campo TEXT;
+    v_tabla TEXT;
+    v_campos_permitidos TEXT[];
     v_fila JSONB;
     v_valor_nuevo JSONB;
     v_valor_anterior JSONB;
+    v_objeto_normalizado JSONB;
+    v_arreglo_normalizado JSONB;
     v_normalizado JSONB := '{}'::JSONB;
+
     v_agregar JSONB;
     v_quitar JSONB;
-    v_id INTEGER;
-    v_id_catalogo TEXT;
+    v_valor_id JSONB;
     v_tabla_relacion TEXT;
     v_tabla_catalogo TEXT;
     v_columna_relacion TEXT;
-    v_id_relacion INTEGER;
-    v_hay_operacion BOOLEAN;
+    v_id_catalogo TEXT;
+    v_existe BOOLEAN;
+
     v_id_solicitud INTEGER;
 BEGIN
+    -- Validar el identificador del medico.
+    IF p_id_medico IS NULL OR p_id_medico < 1 THEN
+        RAISE EXCEPTION 'El id_medico no es valido';
+    END IF;
+
+    -- Obtener el medico.
     SELECT *
       INTO v_medico
       FROM medico
@@ -56,53 +49,288 @@ BEGIN
         RAISE EXCEPTION 'El medico % no existe', p_id_medico;
     END IF;
 
+    -- Validar el JSON recibido.
     IF p_cambios IS NULL
-       OR jsonb_typeof(p_cambios) <> 'object'
+       OR jsonb_typeof(p_cambios) IS DISTINCT FROM 'object'
        OR p_cambios = '{}'::JSONB THEN
         RAISE EXCEPTION
             'Los cambios deben ser un objeto JSON no vacio';
     END IF;
 
-    /*
-     * Procesar cada cambio solicitado.
-     */
-    FOR v_campo, v_cambio IN
-        SELECT key, value
-          FROM jsonb_each(p_cambios)
+    -- Esta funcion no recibe cambios de medico ni direccion.
+    IF p_cambios ? 'medico'
+       OR p_cambios ? 'direccion' THEN
+        RAISE EXCEPTION
+            'Las secciones medico y direccion no admiten solicitudes de cambio';
+    END IF;
+
+    -- Validar las secciones permitidas.
+    FOR v_seccion IN
+        SELECT jsonb_object_keys(p_cambios)
     LOOP
-        /*
-         * Relaciones: especialidades, subespecialidades
-         * y asociaciones.
-         */
-        IF v_campo IN (
+        IF v_seccion NOT IN (
+            'lugar_trabajo',
+            'estudio_medico',
+            'certificaciones',
             'especialidades',
             'subespecialidades',
             'asociaciones'
         ) THEN
-            IF jsonb_typeof(v_cambio) <> 'object'
-               OR NOT (v_cambio ? 'agregar')
-               OR NOT (v_cambio ? 'quitar')
-               OR jsonb_typeof(v_cambio -> 'agregar')
-                    <> 'array'
-               OR jsonb_typeof(v_cambio -> 'quitar')
-                    <> 'array'
-               OR (v_cambio - 'agregar' - 'quitar')
-                    <> '{}'::JSONB THEN
+            RAISE EXCEPTION
+                'La seccion % no admite solicitudes de cambio',
+                v_seccion;
+        END IF;
+    END LOOP;
+
+    /*
+     * Procesar los cambios de registros existentes.
+     * El JSON de entrada contiene arreglos de objetos.
+     * Cada objeto incluye su identificador y los campos nuevos.
+     *
+     * El JSON almacenado conserva el identificador y convierte
+     * cada campo modificado en:
+     * valor_anterior, valor_nuevo y estado.
+     */
+    FOREACH v_seccion IN ARRAY ARRAY[
+        'lugar_trabajo',
+        'estudio_medico',
+        'certificaciones'
+    ]
+    LOOP
+        IF p_cambios ? v_seccion THEN
+
+            IF jsonb_typeof(p_cambios -> v_seccion)
+               IS DISTINCT FROM 'array' THEN
                 RAISE EXCEPTION
-                    'La relacion % debe contener arreglos agregar y quitar',
-                    v_campo;
+                    'La seccion % debe ser un arreglo',
+                    v_seccion;
             END IF;
 
-            v_agregar := v_cambio -> 'agregar';
-            v_quitar := v_cambio -> 'quitar';
+            v_arreglo_normalizado := '[]'::JSONB;
+
+            IF v_seccion = 'lugar_trabajo' THEN
+                v_tabla := 'lugar_trabajo';
+                v_id_campo := 'id_lugar_trabajo';
+
+                v_campos_permitidos := ARRAY[
+                    'empresa_institucion',
+                    'cargo',
+                    'telefono_trabajo',
+                    'email_laboral'
+                ];
+
+            ELSIF v_seccion = 'estudio_medico' THEN
+                v_tabla := 'estudio_medico';
+                v_id_campo := 'id_estudio';
+
+                v_campos_permitidos := ARRAY[
+                    'tipo_estudio',
+                    'titulo',
+                    'institucion',
+                    'lugar',
+                    'fecha'
+                ];
+
+            ELSE
+                v_tabla := 'certificacion';
+                v_id_campo := 'id_certificacion';
+
+                v_campos_permitidos := ARRAY[
+                    'vigente',
+                    'fecha_obtencion',
+                    'puntaje',
+                    'fecha_expiracion'
+                ];
+            END IF;
+
+            -- Procesar cada registro enviado.
+            FOR v_elemento IN
+                SELECT value
+                  FROM jsonb_array_elements(
+                      p_cambios -> v_seccion
+                  )
+            LOOP
+                -- Validar el objeto y su identificador.
+                IF jsonb_typeof(v_elemento)
+                       IS DISTINCT FROM 'object'
+                   OR NOT (v_elemento ? v_id_campo)
+                   OR jsonb_typeof(v_elemento -> v_id_campo)
+                       IS DISTINCT FROM 'number'
+                   OR (v_elemento ->> v_id_campo)
+                       !~ '^[1-9][0-9]*$' THEN
+                    RAISE EXCEPTION
+                        'Cada elemento de % debe ser un objeto con identificador entero positivo en %',
+                        v_seccion,
+                        v_id_campo;
+                END IF;
+
+                v_id_registro :=
+                    (v_elemento ->> v_id_campo)::INTEGER;
+
+                /*
+                 * Obtener el registro y verificar que pertenezca
+                 * al medico indicado.
+                 */
+                EXECUTE format(
+                    'SELECT to_jsonb(t)
+                       FROM %I t
+                      WHERE %I = $1
+                        AND id_medico = $2',
+                    v_tabla,
+                    v_id_campo
+                )
+                INTO v_fila
+                USING v_id_registro, p_id_medico;
+
+                IF v_fila IS NULL THEN
+                    RAISE EXCEPTION
+                        'El registro % con identificador % no existe o no pertenece al medico %',
+                        v_seccion,
+                        v_id_registro,
+                        p_id_medico;
+                END IF;
+
+                -- Conservar el identificador en el JSON resultante.
+                v_objeto_normalizado :=
+                    jsonb_build_object(
+                        v_id_campo,
+                        v_id_registro
+                    );
+
+                -- Procesar los campos enviados para ese registro.
+                FOR v_campo IN
+                    SELECT jsonb_object_keys(v_elemento)
+                LOOP
+                    -- El identificador no es un campo modificable.
+                    IF v_campo = v_id_campo THEN
+                        CONTINUE;
+                    END IF;
+
+                    -- Validar la lista blanca de campos.
+                    IF NOT (
+                        v_campo = ANY(v_campos_permitidos)
+                    ) THEN
+                        RAISE EXCEPTION
+                            'Campo % no permitido en %',
+                            v_campo,
+                            v_seccion;
+                    END IF;
+
+                    v_valor_nuevo :=
+                        v_elemento -> v_campo;
+
+                    v_valor_anterior :=
+                        v_fila -> v_campo;
+
+                    -- No permitir solicitar un valor que ya existe.
+                    IF v_valor_nuevo IS NOT DISTINCT FROM
+                       v_valor_anterior THEN
+                        RAISE EXCEPTION
+                            'El campo % del registro % ya tiene ese valor',
+                            v_campo,
+                            v_id_registro;
+                    END IF;
+
+                    -- Formatear el cambio para su revisión posterior.
+                    v_objeto_normalizado :=
+                        v_objeto_normalizado ||
+                        jsonb_build_object(
+                            v_campo,
+                            jsonb_build_object(
+                                'valor_anterior',
+                                v_valor_anterior,
+                                'valor_nuevo',
+                                v_valor_nuevo,
+                                'estado',
+                                'PENDIENTE'
+                            )
+                        );
+                END LOOP;
+
+                -- Rechazar objetos que solo contienen el identificador.
+                IF v_objeto_normalizado =
+                   jsonb_build_object(
+                       v_id_campo,
+                       v_id_registro
+                   ) THEN
+                    RAISE EXCEPTION
+                        'El registro % no contiene campos para solicitar cambios',
+                        v_id_registro;
+                END IF;
+
+                v_arreglo_normalizado :=
+                    v_arreglo_normalizado ||
+                    jsonb_build_array(v_objeto_normalizado);
+            END LOOP;
+
+            IF jsonb_array_length(v_arreglo_normalizado) = 0 THEN
+                RAISE EXCEPTION
+                    'La seccion % no contiene cambios',
+                    v_seccion;
+            END IF;
+
+            v_normalizado :=
+                v_normalizado ||
+                jsonb_build_object(
+                    v_seccion,
+                    v_arreglo_normalizado
+                );
+        END IF;
+    END LOOP;
+
+    /*
+     * Procesar las relaciones:
+     * especialidades, subespecialidades y asociaciones.
+     *
+     * Estas operaciones se guardan como pendientes; no se ejecutan
+     * directamente en las tablas de relaciones.
+     */
+    FOREACH v_seccion IN ARRAY ARRAY[
+        'especialidades',
+        'subespecialidades',
+        'asociaciones'
+    ]
+    LOOP
+        IF p_cambios ? v_seccion THEN
+
+            IF jsonb_typeof(p_cambios -> v_seccion)
+                   IS DISTINCT FROM 'object'
+               OR NOT (
+                   (p_cambios -> v_seccion) ? 'agregar'
+               )
+               OR NOT (
+                   (p_cambios -> v_seccion) ? 'quitar'
+               )
+               OR jsonb_typeof(
+                   p_cambios -> v_seccion -> 'agregar'
+               ) IS DISTINCT FROM 'array'
+               OR jsonb_typeof(
+                   p_cambios -> v_seccion -> 'quitar'
+               ) IS DISTINCT FROM 'array'
+               OR (
+                   (p_cambios -> v_seccion)
+                   - 'agregar'
+                   - 'quitar'
+               ) <> '{}'::JSONB THEN
+                RAISE EXCEPTION
+                    'La relacion % debe contener solamente arreglos agregar y quitar',
+                    v_seccion;
+            END IF;
+
+            v_agregar :=
+                p_cambios -> v_seccion -> 'agregar';
+
+            v_quitar :=
+                p_cambios -> v_seccion -> 'quitar';
 
             IF jsonb_array_length(v_agregar) = 0
                AND jsonb_array_length(v_quitar) = 0 THEN
                 RAISE EXCEPTION
                     'La relacion % no contiene operaciones',
-                    v_campo;
+                    v_seccion;
             END IF;
 
+            -- No permitir agregar y quitar el mismo identificador.
             IF EXISTS (
                 SELECT 1
                   FROM jsonb_array_elements(v_agregar) a(value)
@@ -111,19 +339,22 @@ BEGIN
             ) THEN
                 RAISE EXCEPTION
                     'La relacion % no puede agregar y quitar el mismo identificador',
-                    v_campo;
+                    v_seccion;
             END IF;
 
-            IF v_campo = 'especialidades' THEN
+            -- Determinar las tablas y columnas de la relacion.
+            IF v_seccion = 'especialidades' THEN
                 v_tabla_relacion := 'medico_especialidad';
                 v_tabla_catalogo := 'especialidad';
                 v_columna_relacion := 'id_especialidad';
                 v_id_catalogo := 'id_especialidad';
-            ELSIF v_campo = 'subespecialidades' THEN
+
+            ELSIF v_seccion = 'subespecialidades' THEN
                 v_tabla_relacion := 'medico_subespecialidad';
                 v_tabla_catalogo := 'subespecialidad';
                 v_columna_relacion := 'id_subespecialidad';
                 v_id_catalogo := 'id_subespecialidad';
+
             ELSE
                 v_tabla_relacion := 'medico_asociacion';
                 v_tabla_catalogo := 'asociacion';
@@ -131,301 +362,101 @@ BEGIN
                 v_id_catalogo := 'id_asociacion';
             END IF;
 
-            -- Validar que todos los identificadores sean enteros positivos.
-            FOR v_valor_nuevo IN
+            -- Validar que los identificadores sean enteros positivos.
+            FOR v_valor_id IN
                 SELECT value
                   FROM jsonb_array_elements(v_agregar)
+
                 UNION ALL
+
                 SELECT value
                   FROM jsonb_array_elements(v_quitar)
             LOOP
-                IF jsonb_typeof(v_valor_nuevo) <> 'number'
-                   OR v_valor_nuevo::TEXT !~ '^[1-9][0-9]*$' THEN
+                IF jsonb_typeof(v_valor_id)
+                       IS DISTINCT FROM 'number'
+                   OR v_valor_id::TEXT
+                       !~ '^[1-9][0-9]*$' THEN
                     RAISE EXCEPTION
                         'La relacion % contiene un identificador invalido',
-                        v_campo;
+                        v_seccion;
                 END IF;
             END LOOP;
 
             -- Comprobar que los elementos que se agregan existan.
-            FOR v_valor_nuevo IN
+            FOR v_valor_id IN
                 SELECT value
                   FROM jsonb_array_elements(v_agregar)
             LOOP
                 EXECUTE format(
                     'SELECT EXISTS (
-                        SELECT 1 FROM %I WHERE %I = $1
+                        SELECT 1
+                          FROM %I
+                         WHERE %I = $1
                     )',
                     v_tabla_catalogo,
                     v_id_catalogo
                 )
-                INTO v_hay_operacion
-                USING (v_valor_nuevo #>> '{}')::INTEGER;
+                INTO v_existe
+                USING (v_valor_id #>> '{}')::INTEGER;
 
-                IF NOT v_hay_operacion THEN
+                IF NOT v_existe THEN
                     RAISE EXCEPTION
                         'El identificador % no existe en %',
-                        v_valor_nuevo #>> '{}',
+                        v_valor_id #>> '{}',
                         v_tabla_catalogo;
                 END IF;
             END LOOP;
 
-            -- Comprobar que las relaciones que se quitan estén asignadas.
-            FOR v_valor_nuevo IN
+            -- Comprobar que los elementos que se quitan
+            -- estén actualmente asignados al medico.
+            FOR v_valor_id IN
                 SELECT value
                   FROM jsonb_array_elements(v_quitar)
             LOOP
                 EXECUTE format(
                     'SELECT EXISTS (
-                        SELECT 1 FROM %I
+                        SELECT 1
+                          FROM %I
                          WHERE id_medico = $1
                            AND %I = $2
                     )',
                     v_tabla_relacion,
                     v_columna_relacion
                 )
-                INTO v_hay_operacion
-                USING p_id_medico,
-                      (v_valor_nuevo #>> '{}')::INTEGER;
+                INTO v_existe
+                USING
+                    p_id_medico,
+                    (v_valor_id #>> '{}')::INTEGER;
 
-                IF NOT v_hay_operacion THEN
+                IF NOT v_existe THEN
                     RAISE EXCEPTION
                         'La relacion % con identificador % no pertenece al medico',
-                        v_campo,
-                        v_valor_nuevo #>> '{}';
+                        v_seccion,
+                        v_valor_id #>> '{}';
                 END IF;
             END LOOP;
 
-            -- Guardar las operaciones sin ejecutarlas.
-            v_normalizado := v_normalizado ||
+            -- Guardar las operaciones pendientes.
+            v_normalizado :=
+                v_normalizado ||
                 jsonb_build_object(
-                    v_campo,
+                    v_seccion,
                     jsonb_build_object(
                         'agregar', v_agregar,
                         'quitar', v_quitar,
                         'estado', 'PENDIENTE'
                     )
                 );
-
-        ELSE
-            /*
-             * Cambios individuales:
-             * tabla:id_registro:campo
-             */
-            IF array_length(string_to_array(v_campo, ':'), 1) <> 3 THEN
-                RAISE EXCEPTION
-                    'Formato invalido para %. Use tabla:id_registro:campo',
-                    v_campo;
-            END IF;
-
-            v_partes := string_to_array(v_campo, ':');
-            v_tabla := v_partes[1];
-            v_nombre_campo := v_partes[3];
-
-            IF v_partes[2] !~ '^[1-9][0-9]*$' THEN
-                RAISE EXCEPTION
-                    'Identificador invalido en %',
-                    v_campo;
-            END IF;
-
-            v_id_registro := v_partes[2]::INTEGER;
-
-            IF v_tabla NOT IN (
-                'medico',
-                'direccion',
-                'lugar_trabajo',
-                'estudio_medico',
-                'certificacion'
-            ) THEN
-                RAISE EXCEPTION
-                    'La tabla % no admite solicitudes',
-                    v_tabla;
-            END IF;
-
-            IF v_nombre_campo = ANY(v_no_permitidos) THEN
-                RAISE EXCEPTION
-                    'El campo % esta prohibido',
-                    v_nombre_campo;
-            END IF;
-
-            IF v_tabla = 'medico'
-               AND v_nombre_campo = ANY(v_personales) THEN
-                RAISE EXCEPTION
-                    'El campo personal % debe actualizarse directamente',
-                    v_nombre_campo;
-            END IF;
-
-            /*
-             * Identificar la clave primaria y comprobar que
-             * el campo exista y no sea una clave o FK.
-             */
-            SELECT a.attname
-              INTO v_id_columna
-              FROM pg_index i
-              JOIN pg_attribute a
-                ON a.attrelid = i.indrelid
-               AND a.attnum = ANY(i.indkey)
-             WHERE i.indrelid = to_regclass(v_tabla)
-               AND i.indisprimary
-             LIMIT 1;
-
-            IF v_id_columna IS NULL THEN
-                RAISE EXCEPTION
-                    'No se pudo identificar la clave primaria de %',
-                    v_tabla;
-            END IF;
-
-            IF NOT EXISTS (
-                SELECT 1
-                  FROM pg_attribute a
-                 WHERE a.attrelid = to_regclass(v_tabla)
-                   AND a.attname = v_nombre_campo
-                   AND a.attnum > 0
-                   AND NOT a.attisdropped
-            ) THEN
-                RAISE EXCEPTION
-                    'El campo % no existe en %',
-                    v_nombre_campo,
-                    v_tabla;
-            END IF;
-
-            IF EXISTS (
-                SELECT 1
-                  FROM pg_constraint c
-                  JOIN pg_attribute a
-                    ON a.attrelid = c.conrelid
-                   AND a.attnum = ANY(c.conkey)
-                 WHERE c.conrelid = to_regclass(v_tabla)
-                   AND c.contype IN ('p', 'f', 'u')
-                   AND a.attname = v_nombre_campo
-                   -- Permitir las FK geograficas solo en direccion.
-                   AND NOT (
-                       v_tabla = 'direccion'
-                       AND a.attname IN (
-                           'id_provincia',
-                           'id_distrito',
-                           'id_corregimiento'
-                       )
-                   )
-            ) THEN
-                RAISE EXCEPTION
-                    'El campo % es una clave y no admite solicitudes',
-                    v_nombre_campo;
-            END IF;
-
-            -- Bloquear identificadores del registro y propietario.
-            IF v_nombre_campo IN (
-                'id_usuario',
-                'id_medico',
-                'id_direccion'
-            ) THEN
-                RAISE EXCEPTION
-                    'El campo % no puede cambiarse mediante solicitud',
-                    v_nombre_campo;
-            END IF;
-
-            IF v_tabla <> 'direccion'
-               AND v_nombre_campo IN (
-                   'id_provincia',
-                   'id_distrito',
-                   'id_corregimiento'
-               ) THEN
-                RAISE EXCEPTION
-                    'El campo % no puede cambiarse mediante solicitud en la tabla %',
-                    v_nombre_campo,
-                    v_tabla;
-            END IF;
-
-            /*
-             * Verificar que el registro pertenezca al médico.
-             */
-            IF v_tabla = 'medico' THEN
-                IF v_id_registro <> p_id_medico THEN
-                    RAISE EXCEPTION
-                        'No puede solicitar cambios para otro medico';
-                END IF;
-
-                SELECT to_jsonb(m)
-                  INTO v_fila
-                  FROM medico m
-                 WHERE m.id_medico = p_id_medico;
-
-            ELSIF v_tabla = 'direccion' THEN
-                SELECT to_jsonb(d)
-                  INTO v_fila
-                  FROM direccion d
-                 WHERE d.id_direccion = v_id_registro
-                   AND (
-                       d.id_direccion = v_medico.id_direccion
-                       OR EXISTS (
-                           SELECT 1
-                             FROM lugar_trabajo lt
-                            WHERE lt.id_direccion = d.id_direccion
-                              AND lt.id_medico = p_id_medico
-                       )
-                   );
-
-            ELSIF v_tabla = 'lugar_trabajo' THEN
-                SELECT to_jsonb(lt)
-                  INTO v_fila
-                  FROM lugar_trabajo lt
-                 WHERE lt.id_lugar_trabajo = v_id_registro
-                   AND lt.id_medico = p_id_medico;
-
-            ELSIF v_tabla = 'estudio_medico' THEN
-                SELECT to_jsonb(e)
-                  INTO v_fila
-                  FROM estudio_medico e
-                 WHERE e.id_estudio = v_id_registro
-                   AND e.id_medico = p_id_medico;
-
-            ELSE
-                SELECT to_jsonb(c)
-                  INTO v_fila
-                  FROM certificacion c
-                 WHERE c.id_certificacion = v_id_registro
-                   AND c.id_medico = p_id_medico;
-            END IF;
-
-            IF v_fila IS NULL THEN
-                RAISE EXCEPTION
-                    'El registro % no existe o no pertenece al medico %',
-                    v_id_registro,
-                    p_id_medico;
-            END IF;
-
-            v_valor_nuevo := v_cambio -> 'valor_nuevo';
-
-            IF v_valor_nuevo IS NULL
-               OR jsonb_typeof(v_cambio) <> 'object'
-               OR (v_cambio - 'valor_nuevo') <> '{}'::JSONB THEN
-                RAISE EXCEPTION
-                    'El campo % debe contener solamente valor_nuevo',
-                    v_campo;
-            END IF;
-
-            v_valor_anterior := v_fila -> v_nombre_campo;
-
-            IF v_valor_nuevo IS NOT DISTINCT FROM v_valor_anterior THEN
-                RAISE EXCEPTION
-                    'El campo % ya tiene ese valor',
-                    v_campo;
-            END IF;
-
-            v_normalizado := v_normalizado ||
-                jsonb_build_object(
-                    v_campo,
-                    jsonb_build_object(
-                        'valor_anterior', v_valor_anterior,
-                        'valor_nuevo', v_valor_nuevo,
-                        'estado', 'PENDIENTE'
-                    )
-                );
         END IF;
     END LOOP;
 
+    IF v_normalizado = '{}'::JSONB THEN
+        RAISE EXCEPTION
+            'No se encontraron cambios para solicitar';
+    END IF;
+
     /*
-     * Crear la solicitud.
+     * Crear la solicitud de cambio.
      */
     INSERT INTO solicitud_cambio (
         id_usuario,
@@ -445,7 +476,9 @@ BEGIN
          INTO v_id_solicitud;
 
     /*
-     * Registrar auditoría si el médico tiene usuario asociado.
+     * Auditoria:
+     * registrar unicamente la creacion de la solicitud
+     * y su identificador.
      */
     IF v_medico.id_usuario IS NOT NULL THEN
         SELECT *
@@ -467,12 +500,11 @@ BEGIN
                 v_usuario.id_usuario,
                 v_usuario.id_rol,
                 'CREAR_SOLICITUD_CAMBIO',
-                'MEDICO',
-                p_id_medico,
+                'SOLICITUD_CAMBIO',
+                v_id_solicitud,
                 now(),
-                'Solicitud de cambio '
+                'Se creo la solicitud de cambio '
                     || v_id_solicitud
-                    || ' creada'
             );
         END IF;
     END IF;
