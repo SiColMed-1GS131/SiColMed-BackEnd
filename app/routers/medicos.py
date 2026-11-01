@@ -1,28 +1,21 @@
-from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.repositories.medicos import ContratoBDPendiente
 from app.schemas.medicos import MedicoCreado, MedicoRegistro, PerfilMedico
+from app.security import roles
+from app.security.auth import UsuarioAutenticado, requiere_rol
 from app.services import medicos as service
 
 router = APIRouter(prefix="/medicos", tags=["Médicos"])
-
-def requiere_administrador() -> Any:
-    """Punto de integración temporal; reemplazar por requiere_rol de Login.
-
-    Nunca autorizar registros sin comprobar permisos.
-    """
-    raise HTTPException(
-        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        detail="Pendiente integración de permiso de administrador con Login",
-    )
 
 @router.post("", response_model=MedicoCreado, status_code=status.HTTP_201_CREATED,
              summary="Registrar un médico (administrador)")
 def crear_medico(
     datos: MedicoRegistro,
-    _administrador: Any = Depends(requiere_administrador),
+    _administrador: UsuarioAutenticado = Depends(
+        requiere_rol(roles.ADMIN_CMP)
+    ),
     db: Session = Depends(get_db),
 ):
     try:
@@ -34,8 +27,16 @@ def crear_medico(
             summary="Obtener perfil de médico por ID")
 def consultar_medico(
     id_medico: int = Path(gt=0, description="ID único del médico"),
+    usuario: UsuarioAutenticado = Depends(
+        requiere_rol(roles.MEDICO, roles.ADMIN_CMP)
+    ),
     db: Session = Depends(get_db),
 ):
+    if usuario.rol == roles.MEDICO and usuario.id_medico != id_medico:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo puede consultar su propio perfil.",
+        )
     resultado = service.obtener_perfil_medico(db, id_medico)
     if resultado is None:
         raise HTTPException(status_code=404, detail="Médico no encontrado")

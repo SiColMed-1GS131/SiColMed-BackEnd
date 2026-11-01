@@ -15,6 +15,7 @@ from app.schemas.medicos_directorio import (
     FiltroMedicos,
     ListaMedicosRespuesta,
 )
+from app.security import roles
 from app.security.auth import requiere_rol
 from app.services.medicos_directorio import (
     actualizar_medico,
@@ -84,7 +85,7 @@ def listar_medicos(
 def editar_perfil_medico(
     datos: ActualizarPerfilMedicoSolicitud,
     id_medico: int = Path(..., ge=1),
-    usuario: Any = Depends(requiere_rol("medico")),
+    usuario: Any = Depends(requiere_rol(roles.MEDICO)),
     db: Session = Depends(get_db),
 ) -> ActualizarMedicoRespuesta:
     try:
@@ -121,7 +122,7 @@ def editar_perfil_medico(
 def editar_medico(
     datos: ActualizarMedicoSolicitud,
     id_medico: int = Path(..., ge=1),
-    usuario: Any = Depends(requiere_rol("admin_cmp")),
+    usuario: Any = Depends(requiere_rol(roles.ADMIN_CMP)),
     db: Session = Depends(get_db),
 ) -> ActualizarMedicoRespuesta:
     try:
