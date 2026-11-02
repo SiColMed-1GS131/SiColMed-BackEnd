@@ -38,9 +38,9 @@ BEGIN
         RAISE EXCEPTION 'El correo % ya está registrado', v_correo;
     END IF;
 
-    SELECT r.id_rol INTO v_id_rol FROM rol r WHERE r.nombre = 'MEDICO';
+    SELECT r.id_rol INTO v_id_rol FROM rol r WHERE LOWER(BTRIM(r.nombre)) = 'medico';
     IF NOT FOUND THEN
-        RAISE EXCEPTION 'No existe el rol MEDICO';
+        RAISE EXCEPTION 'No existe el rol medico';
     END IF;
 
     INSERT INTO usuario (id_rol, correo, password_hash, activo, fecha_creacion)
