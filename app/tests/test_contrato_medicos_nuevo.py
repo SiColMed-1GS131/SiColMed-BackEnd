@@ -1,7 +1,6 @@
 """Pruebas de contrato POST/PATCH sin modificar PostgreSQL.
 Ejecutar desde la raiz del Backend: python -m pytest app/tests/test_contrato_medicos_nuevo.py -v
 """
-from datetime import date
 from unittest.mock import Mock, patch
 
 import pytest
@@ -20,18 +19,23 @@ def datos_registro():
             "cedula": "8-100-200", "primer_nombre": "Ana",
             "apellido_paterno": "Perez", "fecha_nacimiento": "1990-01-01",
         },
-        "direccion": {"id_corregimiento": 1},
-        "especialidades": {"agregar": [1, 2], "quitar": []},
-        "subespecialidades": {"agregar": [3], "quitar": []},
-        "asociaciones": {"agregar": [1], "quitar": []},
-        "estudio_medico": [], "lugar_trabajo": [], "certificaciones": [],
+        "direccion": {
+            "apartado_postal": "0819",
+            "calle": "Calle 50",
+            "edificio": "Torre Medica",
+            "numero_direccion": "12",
+            "id_corregimiento": 1,
+        },
+        "especialidades": [1, 2],
+        "subespecialidades": [3],
+        "asociaciones": [1],
     }
 
 
-def test_post_acepta_objetos_agregar_quitar():
+def test_post_acepta_relaciones_como_listas():
     m = MedicoRegistro.model_validate(datos_registro())
-    assert m.especialidades.agregar == [1, 2]
-    assert m.subespecialidades.agregar == [3]
+    assert m.especialidades.root == [1, 2]
+    assert m.subespecialidades.root == [3]
 
 
 def test_post_acepta_formato_completo_agrupado():
@@ -46,56 +50,44 @@ def test_post_acepta_formato_completo_agrupado():
             "email_personal": "ana.gonzalez@ejemplo.com",
         }
     )
-    datos["lugar_trabajo"] = [
-        {
-            "id_lugar_trabajo": 1,
+    datos["lugar_trabajo"] = {
             "empresa_institucion": "Hospital Central",
             "cargo": "Medica especialista",
             "telefono_trabajo": "300-5678",
             "email_laboral": "ana.gonzalez@hospital.com",
-        }
-    ]
-    datos["estudio_medico"] = [
-        {
-            "id_estudio": 1,
+    }
+    datos["direccion_trabajo"] = {
+            "apartado_postal": "0819",
+            "calle": "Calle 50",
+            "edificio": "Hospital Central",
+            "numero_direccion": "1",
+            "id_corregimiento": 1,
+    }
+    datos["estudio_medico"] = {
             "tipo_estudio": "Licenciatura",
             "titulo": "Medicina General",
             "institucion": "Universidad Nacional",
             "lugar": "Panama",
             "fecha": "2015-12-15",
-        }
-    ]
-    datos["certificaciones"] = [
-        {
-            "id_certificacion": 1,
+    }
+    datos["certificacion"] = {
             "vigente": True,
             "fecha_obtencion": "2025-01-15",
             "puntaje": 95,
             "fecha_expiracion": "2028-01-15",
-        }
-    ]
+    }
 
     medico = MedicoRegistro.model_validate(datos)
 
     assert medico.medico.numero_idoneidad == "I123"
-    assert medico.lugar_trabajo[0].id_lugar_trabajo == 1
-    assert medico.estudio_medico[0].id_estudio == 1
-    assert medico.certificaciones[0].vigente is True
+    assert medico.lugar_trabajo.empresa_institucion == "Hospital Central"
+    assert medico.estudio_medico.titulo == "Medicina General"
+    assert medico.certificacion.vigente is True
 
 
-def test_post_rechaza_quitar_en_alta():
+def test_post_rechaza_ids_de_relaciones_invalidos():
     datos = datos_registro()
-    datos["asociaciones"]["quitar"] = [1]
-    with pytest.raises(ValidationError):
-        MedicoRegistro.model_validate(datos)
-
-
-def test_rechaza_id_duplicado_y_conflicto():
-    datos = datos_registro()
-    datos["especialidades"]["agregar"] = [1, 1]
-    with pytest.raises(ValidationError):
-        MedicoRegistro.model_validate(datos)
-    datos["especialidades"] = {"agregar": [1], "quitar": [1]}
+    datos["asociaciones"] = [1, 1]
     with pytest.raises(ValidationError):
         MedicoRegistro.model_validate(datos)
 
@@ -117,23 +109,30 @@ def test_patch_parcial_con_relaciones_y_contrato_bd():
     assert "subespecialidades" not in payload
 
 
-def test_post_persiste_relaciones_en_transaccion_simulada():
+def test_post_envia_todo_en_un_jsonb():
     m = MedicoRegistro.model_validate(datos_registro())
     db = Mock()
-    with patch("app.repositories.medicos.llamar_escalar", return_value=13):
+    with patch(
+        "app.repositories.medicos.llamar_escalar",
+        return_value=13,
+    ) as llamar:
         id_medico = registrar_medico(db, m)
     assert id_medico == 13
-    assert db.execute.call_count == 4
-    assert db.commit.call_count == 1
-    db.rollback.assert_not_called()
+    llamar.assert_called_once()
+    _, nombre_funcion, parametros = llamar.call_args.args
+    assert nombre_funcion == "registrar_medico"
+    assert list(parametros) == ["p_datos"]
+    assert parametros["p_datos"].sql_type == "jsonb"
+    assert parametros["p_datos"].value["medico"]["primer_nombre"] == "Ana"
+    assert parametros["p_datos"].value["especialidades"] == [1, 2]
 
 
-def test_post_revierte_si_falla_insercion_relacionada():
+def test_post_propaga_error_de_la_funcion_jsonb():
     m = MedicoRegistro.model_validate(datos_registro())
     db = Mock()
-    db.execute.side_effect = RuntimeError("fallo SQL simulado")
-    with patch("app.repositories.medicos.llamar_escalar", return_value=13):
+    with patch(
+        "app.repositories.medicos.llamar_escalar",
+        side_effect=RuntimeError("fallo SQL simulado"),
+    ):
         with pytest.raises(RuntimeError, match="fallo SQL simulado"):
             registrar_medico(db, m)
-    db.rollback.assert_called_once()
-    db.commit.assert_not_called()

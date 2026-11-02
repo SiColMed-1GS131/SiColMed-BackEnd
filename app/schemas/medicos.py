@@ -14,7 +14,6 @@ class DireccionRegistro(Estricto):
     id_corregimiento: int = Field(gt=0)
 
 class EstudioRegistro(Estricto):
-    id_estudio: int | None = Field(default=None, gt=0)
     tipo_estudio: str = Field(min_length=1)
     titulo: str = Field(min_length=1)
     institucion: str = Field(min_length=1)
@@ -22,15 +21,12 @@ class EstudioRegistro(Estricto):
     fecha: date
 
 class TrabajoRegistro(Estricto):
-    id_lugar_trabajo: int | None = Field(default=None, gt=0)
     empresa_institucion: str = Field(min_length=1)
     cargo: str = Field(min_length=1)
     telefono_trabajo: str = Field(min_length=1)
     email_laboral: EmailStr
-    direccion: DireccionRegistro | None = None
 
 class CertificacionRegistro(Estricto):
-    id_certificacion: int | None = Field(default=None, gt=0)
     vigente: bool | None = None
     fecha_obtencion: date
     puntaje: int = Field(ge=0)
@@ -43,18 +39,12 @@ class CertificacionRegistro(Estricto):
             raise ValueError("La fecha de expiración debe ser posterior a la de obtención")
         return self
 
-class CambiosRelaciones(Estricto):
-    agregar: list[int] = Field(default_factory=list)
-    quitar: list[int] = Field(default_factory=list)
-
+class RelacionesRegistro(RootModel[list[int]]):
     @model_validator(mode="after")
-    def validar_relaciones(self):
-        for nombre in ("agregar", "quitar"):
-            valores = getattr(self, nombre)
-            if any(x <= 0 for x in valores) or len(valores) != len(set(valores)):
-                raise ValueError(f"{nombre} debe contener IDs positivos sin duplicados")
-        if set(self.agregar) & set(self.quitar):
-            raise ValueError("No se puede agregar y quitar el mismo ID")
+    def validar_ids(self):
+        valores = self.root
+        if any(valor <= 0 for valor in valores) or len(valores) != len(set(valores)):
+            raise ValueError("Las relaciones deben contener IDs positivos sin duplicados")
         return self
 
 class DatosMedicoRegistro(Estricto):
@@ -66,7 +56,6 @@ class DatosMedicoRegistro(Estricto):
     apellido_paterno: str = Field(min_length=1)
     apellido_materno: str | None = None
     foto: str | None = None
-    certificado_idoneidad_pdf: str | None = None
     fecha_nacimiento: date
     telefono_residencial: str | None = None
     celular: str | None = None
@@ -78,20 +67,26 @@ class MedicoRegistro(Estricto):
 
     medico: DatosMedicoRegistro
     direccion: DireccionRegistro
-    lugar_trabajo: list[TrabajoRegistro] = Field(default_factory=list)
-    estudio_medico: list[EstudioRegistro] = Field(default_factory=list)
-    especialidades: CambiosRelaciones = Field(default_factory=CambiosRelaciones)
-    subespecialidades: CambiosRelaciones = Field(default_factory=CambiosRelaciones)
-    asociaciones: CambiosRelaciones = Field(default_factory=CambiosRelaciones)
-    certificaciones: list[CertificacionRegistro] = Field(default_factory=list)
+    lugar_trabajo: TrabajoRegistro | None = None
+    direccion_trabajo: DireccionRegistro | None = None
+    estudio_medico: EstudioRegistro | None = None
+    certificacion: CertificacionRegistro | None = None
+    especialidades: RelacionesRegistro = Field(default_factory=lambda: RelacionesRegistro([ ]))
+    subespecialidades: RelacionesRegistro = Field(default_factory=lambda: RelacionesRegistro([ ]))
+    asociaciones: RelacionesRegistro = Field(default_factory=lambda: RelacionesRegistro([ ]))
 
     @model_validator(mode="after")
     def validar_nacimiento_y_registro(self):
         if self.medico.fecha_nacimiento > date.today():
             raise ValueError("La fecha de nacimiento no puede ser futura")
-        for nombre in ("especialidades", "subespecialidades", "asociaciones"):
-            if getattr(self, nombre).quitar:
-                raise ValueError(f"{nombre}.quitar debe estar vacío al registrar un médico")
+        if self.lugar_trabajo is None and self.direccion_trabajo is not None:
+            raise ValueError(
+                "direccion_trabajo requiere un lugar_trabajo"
+            )
+        if self.lugar_trabajo is not None and self.direccion_trabajo is None:
+            raise ValueError(
+                "lugar_trabajo requiere una direccion_trabajo"
+            )
         return self
 
 class MedicoCreado(BaseModel):
