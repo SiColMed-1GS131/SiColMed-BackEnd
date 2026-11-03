@@ -15,6 +15,7 @@ from app.routers.medicos_directorio import router as router_medicos_directorio
 from app.routers import solicitudes_cambio, catalogos
 from app.routers import medicos
 from app.routers import auth
+from app.routers import movimientos, reportes
 
 
 app = FastAPI(title="API Certificaciones Médicas - Panamá")
@@ -25,6 +26,8 @@ app.include_router(catalogos.router)
 app.include_router(medicos.router)
 app.include_router(cuentas.router)
 app.include_router(auth.router)
+app.include_router(movimientos.router)
+app.include_router(reportes.router)
 
 app.add_middleware(
     CORSMiddleware,

@@ -54,11 +54,20 @@ class Cuenta(BaseModel):
     nombre: str
     tipo: TipoCuenta
     activa: bool
+    # El frontend lo usa para bloquear el cambio de tipo. Lo debe devolver
+    # listar_cuentas (pendiente en BD); mientras no exista la columna vale False.
+    tiene_movimientos: bool = False
 
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
-                {"id_cuenta": 1, "nombre": "Caja general", "tipo": "DEBITO", "activa": True}
+                {
+                    "id_cuenta": 1,
+                    "nombre": "Caja general",
+                    "tipo": "DEBITO",
+                    "activa": True,
+                    "tiene_movimientos": True,
+                }
             ]
         },
     )

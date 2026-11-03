@@ -34,7 +34,7 @@ def _env(nombre: str, defecto: str) -> str:
     return os.getenv(nombre) or defecto
 
 
-ADMIN_CORREO = _env("DEMO_ADMIN_EMAIL", "admin@colmed.local")
+ADMIN_CORREO = _env("DEMO_ADMIN_EMAIL", "admin@colmed.dev")
 ADMIN_PASSWORD = _env("DEMO_ADMIN_PASSWORD", "Admin123!")
 
 MEDICOS: tuple[dict[str, Any], ...] = (
@@ -50,7 +50,7 @@ MEDICOS: tuple[dict[str, Any], ...] = (
         "telefono_residencial": "507-111-1111",
         "celular": "507-611-1111",
         "email_personal": "ana.perez@example.com",
-        "correo": _env("DEMO_MEDICO1_EMAIL", "medico1@colmed.local"),
+        "correo": _env("DEMO_MEDICO1_EMAIL", "medico1@colmed.dev"),
         "password": _env("DEMO_MEDICO1_PASSWORD", "Medico123!"),
     },
     {
@@ -65,7 +65,7 @@ MEDICOS: tuple[dict[str, Any], ...] = (
         "telefono_residencial": "507-222-2222",
         "celular": "507-622-2222",
         "email_personal": "luis.rodriguez@example.com",
-        "correo": _env("DEMO_MEDICO2_EMAIL", "medico2@colmed.local"),
+        "correo": _env("DEMO_MEDICO2_EMAIL", "medico2@colmed.dev"),
         "password": _env("DEMO_MEDICO2_PASSWORD", "Medico123!"),
     },
 )

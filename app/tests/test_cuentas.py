@@ -28,8 +28,10 @@ class RepositorioCuentasFalso:
         self.llamadas = []
         self.error = None
         self.filas = [
-            {"id_cuenta": 1, "nombre": "Caja general", "tipo": "DEBITO", "activa": True},
-            {"id_cuenta": 2, "nombre": "Cuotas por cobrar", "tipo": "CREDITO", "activa": False},
+            {"id_cuenta": 1, "nombre": "Caja general", "tipo": "DEBITO", "activa": True,
+             "tiene_movimientos": True},
+            {"id_cuenta": 2, "nombre": "Cuotas por cobrar", "tipo": "CREDITO", "activa": False,
+             "tiene_movimientos": False},
         ]
         self.id_creado = 7
         self.editada = True
@@ -118,6 +120,7 @@ def test_crear_cuenta(cliente, repo):
         "nombre": "Caja general",
         "tipo": "DEBITO",
         "activa": True,
+        "tiene_movimientos": False,
     }
     assert repo.llamadas == [("crear", "Caja general", "DEBITO")]
     # A la BD llega texto simple, no el Enum de Pydantic.
@@ -165,7 +168,7 @@ def test_editar_cuenta(cliente, repo):
     respuesta = cliente.put("/cuentas/1", json=cuerpo)
 
     assert respuesta.status_code == 200
-    assert respuesta.json() == {"id_cuenta": 1, **cuerpo}
+    assert respuesta.json() == {"id_cuenta": 1, **cuerpo, "tiene_movimientos": False}
     assert repo.llamadas == [("editar", 1, "Caja chica", "DEBITO", False)]
 
 
