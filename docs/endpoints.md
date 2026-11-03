@@ -99,13 +99,49 @@ Calcula y obtiene los saldos contables para elaborar el reporte del balance gene
       {
         "id_cuenta": 1,
         "nombre_cuenta": "Caja General",
+        "tipo": "DEBITO",
         "total_debito": 5000.00,
         "total_credito": 1500.00,
         "saldo": 3500.00
       }
-    ]
+    ],
+    "totales": {
+      "total_debito": 5000.00,
+      "total_credito": 5000.00,
+      "saldo_deudor": 3500.00,
+      "saldo_acreedor": 3500.00,
+      "cuadra": true
+    }
   }
   ```
+* **Saldos:** el `saldo` de cada fila es `débito − crédito` si la cuenta es `DEBITO`, y
+  `crédito − débito` si es `CREDITO`.
+  * Saldos de naturaleza distinta no se suman entre sí: `totales` los separa en
+    `saldo_deudor` y `saldo_acreedor`.
+  * `cuadra` indica si el total de débitos coincide con el de créditos (partida doble).
+  * El `tipo` sale de `listar_cuentas`; no se cambió `calcular_balance_general`.
+
+---
+
+## 5. Carga masiva de médicos por CSV
+Registra médicos desde un archivo CSV y audita cada carga en la tabla `auditoria`.
+
+* **Método:** `POST` (multipart, campo `archivo`)
+* **Ruta:** `/medicos/importar`
+* **Rol Requerido:** `admin_cmp`
+* **Formato del archivo:** `docs/carga-medicos-csv.md` (ejemplo: `docs/ejemplos/carga_medicos_ejemplo.csv`)
+* **Respuesta Exitosa (200 OK):**
+  ```json
+  {"archivo": "carga.csv", "procesados": 5, "registrados": 5, "rechazados": 0, "errores": [], "id_auditoria": 16}
+  ```
+  Una fila con error no detiene la carga: queda en `errores` con su número de línea.
+* **Errores:**
+  * `401` sin token y `403` si el rol no es administrador.
+  * Si el archivo completo se rechaza: `413` si supera 2 MB; `415` si no es `.csv` o no está
+    en UTF-8; `422` si la cabecera está incompleta, no hay filas o hay más de 500. Estos
+    casos también quedan auditados.
+* **Función de BD:** `registrar_carga_medicos` (migración `e98cfc158897`).
+  > ⚠️ Es un fix de emergencia de Desarrollo, pendiente de revisión por Base de Datos.
 
 ---
 

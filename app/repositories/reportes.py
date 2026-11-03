@@ -27,6 +27,15 @@ class ReportesRepository:
             },
         )
 
+    def tipos_de_cuenta(self) -> dict[int, str]:
+        """listar_cuentas(NULL): tipo (DEBITO o CREDITO) de cada cuenta, activa o no.
+
+        calcular_balance_general no devuelve el tipo; se toma de aquí para no cambiar
+        la firma de esa función de BD.
+        """
+        filas = llamar_tabla(self.db, "listar_cuentas", {"activa": Arg(None, "boolean")})
+        return {int(fila["id_cuenta"]): str(fila["tipo"]) for fila in filas}
+
 
 def get_reportes_repository(db: Session = Depends(get_db)) -> ReportesRepository:
     """Dependencia de FastAPI; las pruebas la reemplazan con un repositorio falso."""

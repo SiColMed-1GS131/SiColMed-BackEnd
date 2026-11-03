@@ -31,3 +31,11 @@ def subespecialidades(db: Session):
 
 def asociaciones(db: Session):
     return db.scalars(select(Asociacion).order_by(Asociacion.nombre, Asociacion.id_asociacion)).all()
+
+
+def ids_corregimiento_por_codigo(db: Session) -> dict[str, int]:
+    """Código oficial DPA (ej. "080807") -> id_corregimiento. Lo usa la carga por CSV."""
+    filas = db.execute(
+        select(Corregimiento.codigo, Corregimiento.id_corregimiento).where(Corregimiento.codigo.is_not(None))
+    ).all()
+    return {codigo: id_corregimiento for codigo, id_corregimiento in filas}

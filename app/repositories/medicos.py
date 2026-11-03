@@ -60,3 +60,19 @@ def obtener_foto(db: Session, id_medico: int) -> str | None:
         text("SELECT foto FROM medico WHERE id_medico = :id_medico"),
         {"id_medico": id_medico},
     ).scalar()
+
+# Carga masiva por CSV (POST /medicos/importar): una fila de auditoria por carga.
+def registrar_carga(db: Session, id_administrador: int, archivo: str, procesados: int,
+                    registrados: int, errores: list[dict]) -> int:
+    return llamar_escalar(
+        db,
+        "registrar_carga_medicos",
+        {
+            "id_administrador": Arg(id_administrador, "integer"),
+            "archivo": Arg(archivo, "text"),
+            "procesados": Arg(procesados, "integer"),
+            "registrados": Arg(registrados, "integer"),
+            "errores": Arg(errores, "jsonb"),
+        },
+        commit=True,
+    )

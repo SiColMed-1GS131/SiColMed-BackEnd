@@ -16,7 +16,9 @@ DATOS = {
         "apellido_paterno": "Gómez",
         "fecha_nacimiento": "1990-01-01",
     },
-    "direccion": {"id_corregimiento": 1},
+    # apartado_postal, calle y numero_direccion son NOT NULL en direccion: la API los exige
+    "direccion": {"apartado_postal": "0819-00000", "calle": "Calle 50",
+                  "numero_direccion": "12", "id_corregimiento": 1},
 }
 
 def test_registro_requiere_administrador():
@@ -149,5 +151,28 @@ def test_id_invalido():
     try:
         with TestClient(app) as client:
             assert client.get("/medicos/0").status_code == 422
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_registro_rechaza_direccion_sin_apartado_postal_con_422(monkeypatch):
+    """Requerimiento 12: antes llegaba como null a la BD y PostgreSQL respondía
+    'null value in column "apartado_postal" ... violates not-null constraint'."""
+    app.dependency_overrides[get_usuario_actual] = lambda: UsuarioAutenticado(id_usuario=1, rol=roles.ADMIN_CMP)
+    app.dependency_overrides[get_db] = lambda: Mock()
+    monkeypatch.setattr(service, "registrar_medico", lambda db, datos: 42)
+    trabajo = {
+        "lugar_trabajo": {"empresa_institucion": "Hospital", "cargo": "Médico",
+                          "telefono_trabajo": "507-000-0000", "email_laboral": "ana@colmed.dev"},
+        "direccion_trabajo": {"apartado_postal": None, "calle": "", "numero_direccion": "2",
+                              "id_corregimiento": 2},
+    }
+    try:
+        with TestClient(app) as client:
+            r = client.post("/medicos", json={**DATOS, **trabajo})
+        assert r.status_code == 422
+        campos = {tuple(e["loc"][-2:]) for e in r.json()["detail"]}
+        assert ("direccion_trabajo", "apartado_postal") in campos
+        assert ("direccion_trabajo", "calle") in campos
     finally:
         app.dependency_overrides.clear()

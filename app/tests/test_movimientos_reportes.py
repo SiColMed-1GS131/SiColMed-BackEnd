@@ -52,6 +52,9 @@ class RepositorioReportesFalso:
              "total_credito": 4, "saldo": 6},
         ]
 
+    def tipos_de_cuenta(self):
+        return {1: "DEBITO"}
+
 
 def _como(rol):
     app.dependency_overrides[get_usuario_actual] = lambda: UsuarioAutenticado(
@@ -157,6 +160,27 @@ def test_balance_general(cliente, repo_rep):
     assert respuesta.status_code == 200
     assert respuesta.json()["filas"][0]["saldo"] == 6
     assert repo_rep.llamadas == [("balance", date(2026, 11, 1), date(2026, 11, 30))]
+
+
+def test_balance_separa_saldos_deudores_y_acreedores(cliente, repo_rep):
+    # Caso real (cuentas QA, enero 2026): antes el total de saldos sumaba 300.00
+    repo_rep.balance_general = lambda inicio, fin: [
+        {"id_cuenta": 2, "nombre_cuenta": "Caja", "total_debito": 150, "total_credito": 100, "saldo": 50},
+        {"id_cuenta": 3, "nombre_cuenta": "Banco", "total_debito": 100, "total_credito": 0, "saldo": 100},
+        {"id_cuenta": 4, "nombre_cuenta": "Ingresos", "total_debito": 0, "total_credito": 150, "saldo": 150},
+    ]
+    repo_rep.tipos_de_cuenta = lambda: {2: "DEBITO", 3: "DEBITO", 4: "CREDITO"}
+
+    cuerpo = cliente.get(
+        "/reportes/balance-general",
+        params={"fecha_inicio": "2026-01-01", "fecha_fin": "2026-01-31"},
+    ).json()
+
+    assert [f["tipo"] for f in cuerpo["filas"]] == ["DEBITO", "DEBITO", "CREDITO"]
+    assert cuerpo["totales"] == {
+        "total_debito": 250.0, "total_credito": 250.0,
+        "saldo_deudor": 150.0, "saldo_acreedor": 150.0, "cuadra": True,
+    }
 
 
 def test_balance_rechaza_rol_sin_permiso(cliente, repo_rep):

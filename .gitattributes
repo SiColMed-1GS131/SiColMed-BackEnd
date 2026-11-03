@@ -1,1 +1,3 @@
 * text=auto eol=lf
+# Copias sin cambios de los archivos oficiales de ANATI (DPA 2025): no convertir fin de línea
+app/scripts/datos/dpa_2025/** -text

@@ -1,0 +1,62 @@
+numero,nombre,especialidad_basica,especialidad_catalogo,observacion
+1,Alergología e inmunología clínica,Medicina interna o Pediatría,,Más de una especialidad básica
+2,Algiología,"Anestesiología, Ortopedia, Medicina física y rehabilitación, Neurocirugía",,Más de una especialidad básica
+3,Cardiología,Medicina interna,Medicina interna,
+4,Cardiología intervencionista,Cardiología,,La especialidad básica es una subespecialidad
+5,Cardiología nuclear,Cardiología,,La especialidad básica es una subespecialidad
+6,Cardiología pediátrica,"Pediatría, Cardiología",,Más de una especialidad básica
+7,Cirugía cardiovascular y endovascular,Endocrinología,,La especialidad básica no está en el artículo 3 y el nombre ya es una especialidad del artículo 3
+8,Cirugía colorrectal Coloproctología,Cirugía general,Cirugía general,Nombre en dos líneas en el documento; se conserva tal cual
+9,Cirugía oncológica,Cirugía general,Cirugía general,
+10,Cirugía pediátrica,"Pediatría, Cardiología",,Más de una especialidad básica
+11,Cirugía plástica,Cirugía general,Cirugía general,El documento no indica resolución
+12,Cirugía Torácica,Cirugía general,Cirugía general,También figura como especialidad en el artículo 3
+13,Córnea y cirugía refractiva,Oftalmología,Oftalmología,
+14,Dermatología pediátrica,"Pediatría, Dermatología",,Más de una especialidad básica
+15,Ecocardiografía,Cardiología,,La especialidad básica es una subespecialidad
+16,Electrofisiología,Cardiología,,La especialidad básica es una subespecialidad
+17,Endocrinología,Medicina interna,Medicina interna,El documento no indica resolución
+18,Endocrinología pediátrica,Pediatría,Pediatría,
+19,Gastroenterología y nutrición pediátrica,Pediatría,Pediatría,
+20,Gastroenterología y endoscopia digestiva,Medicina interna,Medicina interna,"El documento dice ""Gastroenterologíay""; se separó la ""y"""
+21,Genética médica y genómica,"Medicina interna, Medicina familiar Pediatría",,Más de una especialidad básica
+22,Geriatría y gerontología,"Medicina interna, Medicina familiar",,Más de una especialidad básica
+23,Gerontopsiquiatría,Psiquiatría,Psiquiatría,
+24,Ginecología infanto juvenil,Ginecología obstetricia,Ginecología y obstetricia,
+25,Ginecología oncológica,Ginecología obstetricia,Ginecología y obstetricia,
+26,Glaucoma,Oftalmología,Oftalmología,
+27,Hematología,Medicina interna,Medicina interna,
+28,Hematología pediátrica,Pediatría,Pediatría,
+29,Hemodinámica,Cardiología,,La especialidad básica es una subespecialidad
+30,Hemodinámica en cardiología pediátrica,Cardiología pediátrica,,La especialidad básica es una subespecialidad
+31,Infectología,Medicina interna,Medicina interna,
+32,Infectología pediátrica,Pediatría,Pediatría,
+33,Medicina crítica,"Medicina interna, Anestesiología, Cirugía general, Urgencias médicas quirúrgicas",,Más de una especialidad básica
+34,Medicina hospitalaria,Medicina interna,Medicina interna,
+35,Medicina materno fetal,Ginecología obstetricia,Ginecología y obstetricia,
+36,Medicina reproductiva,Ginecología obstetricia,Ginecología y obstetricia,
+37,Nefrología,Medicina interna,Medicina interna,
+38,Nefrología pediátrica,Pediatría,Pediatría,
+39,Neonatología,Pediatría,Pediatría,
+40,Neumología,Medicina interna,Medicina interna,
+41,Neumología pediátrica,Pediatría,Pediatría,
+42,Neurología,Medicina interna,Medicina interna,
+43,Neurología pediátrica,Pediatría,Pediatría,El documento no indica resolución
+44,Neurorradiología diagnóstica,Radiología médica e imagenología,Radiología médica e imagenología,
+45,Neurorradiología intervencionista,Radiología médica e imagenología,Radiología médica e imagenología,
+46,Obstetricia crítica,Ginecología obstetricia,Ginecología y obstetricia,
+47,Oculoplástica (Plástica ocular),Oftalmología,Oftalmología,
+48,Oftalmología pediátrica,Oftalmología,Oftalmología,
+49,Oncología médica,Medicina interna,Medicina interna,
+50,Ortopedia y traumatología pediátrica,Ortopedia y traumatología,Ortopedia y traumatología,
+51,Paidopsiquiatría,Psiquiatría,Psiquiatría,
+52,Psiquiatría de adicción,Psiquiatría,Psiquiatría,
+53,Psiquiatría legal y forense,Psiquiatría,Psiquiatría,
+54,Psiquiatría social y comunitaria,Psiquiatría,Psiquiatría,
+55,Radiología pediátrica,Pediatría,Pediatría,
+56,Rehabilitación cardiaca y ergometría,Cardiología,,La especialidad básica es una subespecialidad
+57,Retina,Oftalmología,Oftalmología,
+58,Reumatología,Medicina interna,Medicina interna,
+59,Reumatología pediátrica,Pediatría,Pediatría,
+60,Urgencias pediátricas,Pediatría,Pediatría,
+61,Uroginecología,Ginecología obstetricia,Ginecología y obstetricia,El documento no indica resolución

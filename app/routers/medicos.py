@@ -10,10 +10,11 @@ from app.schemas.medicos import (
     MedicoPublico,
     MedicoRegistro,
     PerfilMedico,
+    ResultadoImportacion,
 )
 from app.security import roles
 from app.security.auth import UsuarioAutenticado, get_usuario_opcional, requiere_rol
-from app.services import certificados, fotos
+from app.services import certificados, fotos, importacion_medicos
 from app.services import medicos as service
 
 router = APIRouter(prefix="/medicos", tags=["Médicos"])
@@ -31,6 +32,28 @@ def crear_medico(
         return {"id_medico": service.registrar_medico(db, datos)}
     except ContratoBDPendiente as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+@router.post(
+    "/importar",
+    response_model=ResultadoImportacion,
+    summary="Carga masiva de médicos por CSV (administrador)",
+    description=(
+        "CSV en UTF-8 separado por comas, máx. 2 MB y 500 filas (formato en "
+        "docs/carga-medicos-csv.md). Cada fila se registra como POST /medicos; una fila "
+        "con error no detiene la carga y se informa con su número de línea. Cada carga, "
+        "también la rechazada, queda en la tabla auditoria (CARGA_MASIVA_MEDICOS)."
+    ),
+)
+def importar_medicos(
+    archivo: UploadFile = File(description="Archivo .csv"),
+    administrador: UsuarioAutenticado = Depends(requiere_rol(roles.ADMIN_CMP)),
+    db: Session = Depends(get_db),
+):
+    # def (no async): FastAPI la ejecuta en un hilo y una carga larga no bloquea la API
+    try:
+        return importacion_medicos.importar(db, archivo, administrador.id_usuario)
+    except importacion_medicos.ImportacionInvalida as error:
+        raise HTTPException(status_code=error.status_code, detail=str(error)) from error
 
 @router.get(
     "/{id_medico}",

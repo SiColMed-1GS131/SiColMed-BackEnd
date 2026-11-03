@@ -7,10 +7,12 @@ class Estricto(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
 class DireccionRegistro(Estricto):
-    apartado_postal: str | None = None
-    calle: str | None = None
+    # direccion.apartado_postal, calle y numero_direccion son NOT NULL en la BD:
+    # se exigen aquí para responder 422 por campo en vez del error de PostgreSQL.
+    apartado_postal: str = Field(min_length=1)
+    calle: str = Field(min_length=1)
     edificio: str | None = None
-    numero_direccion: str | None = None
+    numero_direccion: str = Field(min_length=1)
     id_corregimiento: int = Field(gt=0)
 
 class EstudioRegistro(Estricto):
@@ -103,6 +105,21 @@ class FotoSubida(BaseModel):
 
     foto: str  # ruta relativa a UPLOADS_DIR guardada en medico.foto
     url: str   # GET público para verla
+
+class ErrorImportacion(BaseModel):
+    fila: int    # número de línea del CSV (la 1 es la cabecera); 0 = error del archivo
+    error: str
+
+
+class ResultadoImportacion(BaseModel):
+    """Respuesta de POST /medicos/importar (también queda en la tabla auditoria)."""
+
+    archivo: str
+    procesados: int        # filas de datos leídas
+    registrados: int
+    rechazados: int
+    errores: list[ErrorImportacion]
+    id_auditoria: int
 
 class PerfilMedico(RootModel[dict[str, Any]]):
     """Respuesta de la función obtener_perfil_medico; contrato de salida pendiente."""

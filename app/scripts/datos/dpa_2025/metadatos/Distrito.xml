@@ -1,0 +1,708 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MD_Metadata xmlns="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:gts="http://www.isotc211.org/2005/gts" xmlns:srv="http://www.isotc211.org/2005/srv" xmlns:gml="http://www.opengis.net/gml" xmlns:gmx="http://www.isotc211.org/2005/gmx" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<language>
+<LanguageCode codeList="http://www.loc.gov/standards/iso639-2/php/code_list.php" codeListValue="spa" codeSpace="ISO639-2">spa</LanguageCode>
+</language>
+<characterSet>
+<MD_CharacterSetCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_CharacterSetCode" codeListValue="utf8" codeSpace="ISOTC211/19115">utf8</MD_CharacterSetCode>
+</characterSet>
+<hierarchyLevel>
+<MD_ScopeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ScopeCode" codeListValue="dataset" codeSpace="ISOTC211/19115">dataset</MD_ScopeCode>
+</hierarchyLevel>
+<hierarchyLevelName>
+<gco:CharacterString>dataset</gco:CharacterString>
+</hierarchyLevelName>
+<contact>
+<CI_ResponsibleParty>
+<individualName>
+<gco:CharacterString>Carlos Morales</gco:CharacterString>
+</individualName>
+<organisationName>
+<gco:CharacterString>Instituto Geográfico Nacional Tommy Guardia</gco:CharacterString>
+</organisationName>
+<positionName>
+<gco:CharacterString>Jefe de Departamento</gco:CharacterString>
+</positionName>
+<role>
+<CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="custodian" codeSpace="ISOTC211/19115">custodian</CI_RoleCode>
+</role>
+</CI_ResponsibleParty>
+</contact>
+<dateStamp>
+<gco:Date>2025-07-04</gco:Date>
+</dateStamp>
+<metadataStandardName>
+<gco:CharacterString>ISO 19139 Geographic Information - Metadata - Implementation Specification</gco:CharacterString>
+</metadataStandardName>
+<metadataStandardVersion>
+<gco:CharacterString>2007</gco:CharacterString>
+</metadataStandardVersion>
+<spatialRepresentationInfo>
+<MD_VectorSpatialRepresentation>
+<topologyLevel>
+<MD_TopologyLevelCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_TopologyLevelCode" codeListValue="geometryOnly" codeSpace="ISOTC211/19115">geometryOnly</MD_TopologyLevelCode>
+</topologyLevel>
+<geometricObjects>
+<MD_GeometricObjects>
+<geometricObjectType>
+<MD_GeometricObjectTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_GeometricObjectTypeCode" codeListValue="composite" codeSpace="ISOTC211/19115">composite</MD_GeometricObjectTypeCode>
+</geometricObjectType>
+<geometricObjectCount>
+<gco:Integer>94</gco:Integer>
+</geometricObjectCount>
+</MD_GeometricObjects>
+</geometricObjects>
+</MD_VectorSpatialRepresentation>
+</spatialRepresentationInfo>
+<referenceSystemInfo>
+<MD_ReferenceSystem>
+<referenceSystemIdentifier>
+<RS_Identifier>
+<code>
+<gco:CharacterString>32617</gco:CharacterString>
+</code>
+<codeSpace>
+<gco:CharacterString>EPSG</gco:CharacterString>
+</codeSpace>
+<version>
+<gco:CharacterString>9.8.8(3.0.1)</gco:CharacterString>
+</version>
+</RS_Identifier>
+</referenceSystemIdentifier>
+</MD_ReferenceSystem>
+</referenceSystemInfo>
+<identificationInfo>
+<MD_DataIdentification>
+<citation>
+<CI_Citation>
+<title>
+<gco:CharacterString>Conjunto de Datos de Límites Político-Administrativos de la República de Panamá, escala 1:25 000, año 2025 (Distrito)</gco:CharacterString>
+</title>
+<alternateTitle>
+<gco:CharacterString>Conjunto de Datos de Límites Político-Administrativos de la República de Panamá, escala 1:25 000, año 2025 (Corregimiento)</gco:CharacterString>
+</alternateTitle>
+<date>
+<CI_Date>
+<date>
+<gco:Date>2025-05-02</gco:Date>
+</date>
+<dateType>
+<CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="creation" codeSpace="ISOTC211/19115">creation</CI_DateTypeCode>
+</dateType>
+</CI_Date>
+</date>
+<date>
+<CI_Date>
+<date>
+<gco:Date>2025-07-04</gco:Date>
+</date>
+<dateType>
+<CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="publication" codeSpace="ISOTC211/19115">publication</CI_DateTypeCode>
+</dateType>
+</CI_Date>
+</date>
+<date>
+<CI_Date>
+<date>
+<gco:Date>2025-06-30</gco:Date>
+</date>
+<dateType>
+<CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="revision" codeSpace="ISOTC211/19115">revision</CI_DateTypeCode>
+</dateType>
+</CI_Date>
+</date>
+<edition>
+<gco:CharacterString>versión 3</gco:CharacterString>
+</edition>
+<editionDate>
+<gco:Date>2025-06-30</gco:Date>
+</editionDate>
+<presentationForm>
+<CI_PresentationFormCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_PresentationFormCode" codeListValue="documentDigital" codeSpace="ISOTC211/19115">documentDigital</CI_PresentationFormCode>
+</presentationForm>
+<presentationForm>
+<CI_PresentationFormCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_PresentationFormCode" codeListValue="mapDigital" codeSpace="ISOTC211/19115">mapDigital</CI_PresentationFormCode>
+</presentationForm>
+<series>
+<CI_Series>
+<name>
+<gco:CharacterString>DPA</gco:CharacterString>
+</name>
+</CI_Series>
+</series>
+<collectiveTitle>
+<gco:CharacterString>Límites de distrito</gco:CharacterString>
+</collectiveTitle>
+</CI_Citation>
+</citation>
+<abstract>
+<gco:CharacterString>Este conjunto de datos es una representación espacial de distrito (forma de área) descrita en las leyes oficiales en materia de Límites Político-Administrativos de la República de Panamá, actualizado al 2024. A partir de las versiones 2016 y 2023. La primera generada para plasmarla en los mapas de la Cartografía Nacional, la segunda y tercera versión son actualizaciones. Los insumos utilizados están referidos al año de creación de cada unidad y van desde mapas y fotos aéreas históricas, croquis, planos, modelos digitales del terreno, inspección y trabajo de campo, ortofotos a partir de diferentes sensores. Además, se incluyen información sobre fecha de creación y sus modificaciones, número de gaceta y codificaciones nacionales proporcionadas por el Instituto Nacional de Estadísticas y Censos. La capa esta compuesta por 699 corregimientos de los cuales 3 son considerados comarcas Indígenas; existen 83 distritos de los cuales 1 es considerado comarca indígena, y 1 es ficticio, por representación cartográfica digital, para cubrir el espacio territorial de la Comarca Kuna Yala a nivel de distrito; 10 Provincias y 3 comarcas considerados a nivel de provincia. En este contexto, la Comarca Naso Tjër Di mantiene una categoría de Distrito, según la Ley N°188 que la crea en el año 2020; se divide en tres corregimientos, que aún no se cargan a la DPA debido a que tiene inconsistencia en sus límites.</gco:CharacterString>
+</abstract>
+<purpose>
+<gco:CharacterString>Actualizar el Conjunto de Datos de Límites Político-Administrativos de la República de Panamá, escala 1:25 000, año 2025; los cuales están representados a nivel de corregimientos (forma área). Estos límites fueron levantados digitalmente a la escala 1:25 000 y actualizados de acuerdo con las leyes vigentes al año 2024. Este conjunto de datos permite disponer de una representación física de todo el territorio nacional (continental e insular).</gco:CharacterString>
+</purpose>
+<credit>
+<gco:CharacterString>Creado por el Instituto Geográfico Nacional "Tommy Guardia"
+con información de: 
+Instituto Nacional de Estadística y Censo de la Contraloría General de la República
+Comisión Nacional de Límites Políticos Administrativos - Ministerio de Gobierno
+Asamblea Nacional
+Corte Suprema e Informes de Asesoría Legal de ANP
+Autoridad del Canal de Panamá.
+Ministerio de Ambiente
+Tribunal Electoral
+</gco:CharacterString>
+</credit>
+<status>
+<MD_ProgressCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ProgressCode" codeListValue="completed" codeSpace="ISOTC211/19115">completed</MD_ProgressCode>
+</status>
+<pointOfContact>
+<CI_ResponsibleParty>
+<individualName>
+<gco:CharacterString>Carlos Morales</gco:CharacterString>
+</individualName>
+<organisationName>
+<gco:CharacterString>Instituto Geográfico Nacional Tommy Guardia</gco:CharacterString>
+</organisationName>
+<positionName>
+<gco:CharacterString>Jefe de Departamento</gco:CharacterString>
+</positionName>
+<role>
+<CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="custodian" codeSpace="ISOTC211/19115">custodian</CI_RoleCode>
+</role>
+</CI_ResponsibleParty>
+</pointOfContact>
+<resourceMaintenance>
+<MD_MaintenanceInformation>
+<maintenanceAndUpdateFrequency>
+<MD_MaintenanceFrequencyCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_MaintenanceFrequencyCode" codeListValue="annually" codeSpace="ISOTC211/19115">annually</MD_MaintenanceFrequencyCode>
+</maintenanceAndUpdateFrequency>
+</MD_MaintenanceInformation>
+</resourceMaintenance>
+<descriptiveKeywords>
+<MD_Keywords>
+<keyword>
+<gco:CharacterString>Corregimiento</gco:CharacterString>
+</keyword>
+<keyword>
+<gco:CharacterString>División Política Administrativa</gco:CharacterString>
+</keyword>
+<keyword>
+<gco:CharacterString>Límites</gco:CharacterString>
+</keyword>
+<type>
+<MD_KeywordTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="theme" codeSpace="ISOTC211/19115">theme</MD_KeywordTypeCode>
+</type>
+</MD_Keywords>
+</descriptiveKeywords>
+<descriptiveKeywords>
+<MD_Keywords>
+<keyword>
+<gco:CharacterString>Mapa web</gco:CharacterString>
+</keyword>
+<keyword>
+<gco:CharacterString>Servicio web</gco:CharacterString>
+</keyword>
+<type>
+<MD_KeywordTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="theme" codeSpace="ISOTC211/19115">theme</MD_KeywordTypeCode>
+</type>
+</MD_Keywords>
+</descriptiveKeywords>
+<descriptiveKeywords>
+<MD_Keywords>
+<keyword>
+<gco:CharacterString>Contornos</gco:CharacterString>
+</keyword>
+<keyword>
+<gco:CharacterString>Ubicación</gco:CharacterString>
+</keyword>
+<keyword>
+<gco:CharacterString>Límites</gco:CharacterString>
+</keyword>
+<keyword>
+<gco:CharacterString>Límites Internacionales</gco:CharacterString>
+</keyword>
+<keyword>
+<gco:CharacterString>Provincia</gco:CharacterString>
+</keyword>
+<keyword>
+<gco:CharacterString>Distrito</gco:CharacterString>
+</keyword>
+<keyword>
+<gco:CharacterString>Corregimiento</gco:CharacterString>
+</keyword>
+</MD_Keywords>
+</descriptiveKeywords>
+<descriptiveKeywords>
+<MD_Keywords>
+<keyword>
+<gco:CharacterString>Downloadable Data</gco:CharacterString>
+</keyword>
+<thesaurusName uuidref="723f6998-058e-11dc-8314-0800200c9a66">
+</thesaurusName>
+</MD_Keywords>
+</descriptiveKeywords>
+<resourceSpecificUsage>
+<MD_Usage>
+<specificUsage>
+<gco:CharacterString>Estructuración del territorio</gco:CharacterString>
+</specificUsage>
+<usageDateTime>
+<gco:DateTime>2025-06-30T00:00:00</gco:DateTime>
+</usageDateTime>
+<userDeterminedLimitations>
+<gco:CharacterString>La información presentada, sólo puede ser usada como referencia. Esta representación es meramente, cartográfica. El Instituto Geográfico Nacional “Tommy Guardia”, no se hace responsable del uso de la información que pudiera ser derivada. Por tanto, estamos exentos de toda responsabilidad producida por su incorrección, omisión o falta de actualización</gco:CharacterString>
+</userDeterminedLimitations>
+<userContactInfo gco:nilReason="missing">
+</userContactInfo>
+</MD_Usage>
+</resourceSpecificUsage>
+<resourceSpecificUsage>
+<MD_Usage>
+<specificUsage>
+<gco:CharacterString>Asignación de competencias institucionales</gco:CharacterString>
+</specificUsage>
+<userDeterminedLimitations>
+<gco:CharacterString>La información presentada, sólo puede ser usada como referencia. Esta representación es meramente, cartográfica. El Instituto Geográfico Nacional “Tommy Guardia”, no se hace responsable del uso de la información que pudiera ser derivada. Por tanto, estamos exentos de toda responsabilidad producida por su incorrección, omisión o falta de actualización</gco:CharacterString>
+</userDeterminedLimitations>
+<userContactInfo gco:nilReason="missing">
+</userContactInfo>
+</MD_Usage>
+</resourceSpecificUsage>
+<resourceSpecificUsage>
+<MD_Usage>
+<specificUsage>
+<gco:CharacterString>Marco para la aplicación normativa</gco:CharacterString>
+</specificUsage>
+<userContactInfo gco:nilReason="missing">
+</userContactInfo>
+</MD_Usage>
+</resourceSpecificUsage>
+<resourceConstraints>
+<MD_Constraints>
+<useLimitation>
+<gco:CharacterString>La información presentada, sólo puede ser usada como referencia. Esta representación es meramente, cartográfica. El Instituto Geográfico Nacional “Tommy Guardia”, no se hace responsable del uso de la información que pudiera ser derivada. Por tanto, estamos exentos de toda responsabilidad producida por su incorrección, omisión o falta de actualización. </gco:CharacterString>
+</useLimitation>
+<useLimitation>
+<gco:CharacterString>CC BY-NC-SA</gco:CharacterString>
+</useLimitation>
+</MD_Constraints>
+</resourceConstraints>
+<spatialRepresentationType>
+<MD_SpatialRepresentationTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_SpatialRepresentationTypeCode" codeListValue="vector" codeSpace="ISOTC211/19115">vector</MD_SpatialRepresentationTypeCode>
+</spatialRepresentationType>
+<spatialResolution>
+<MD_Resolution>
+<equivalentScale>
+<MD_RepresentativeFraction>
+<denominator>
+<gco:Integer>25000</gco:Integer>
+</denominator>
+</MD_RepresentativeFraction>
+</equivalentScale>
+</MD_Resolution>
+</spatialResolution>
+<spatialResolution>
+<MD_Resolution>
+<distance>
+<gco:Distance uom="m">25</gco:Distance>
+</distance>
+</MD_Resolution>
+</spatialResolution>
+<language>
+<LanguageCode codeList="http://www.loc.gov/standards/iso639-2/php/code_list.php" codeListValue="spa" codeSpace="ISO639-2">spa</LanguageCode>
+</language>
+<characterSet>
+<MD_CharacterSetCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_CharacterSetCode" codeListValue="utf8" codeSpace="ISOTC211/19115">utf8</MD_CharacterSetCode>
+</characterSet>
+<topicCategory>
+<MD_TopicCategoryCode>boundaries</MD_TopicCategoryCode>
+</topicCategory>
+<topicCategory>
+<MD_TopicCategoryCode>location</MD_TopicCategoryCode>
+</topicCategory>
+<environmentDescription>
+<gco:CharacterString>Microsoft Windows 10 Version 10.0 (Build 26100) ; Esri ArcGIS 13.3.0.52636</gco:CharacterString>
+</environmentDescription>
+<extent>
+<EX_Extent>
+<description>
+<gco:CharacterString>El alcance del conjunto de datos contenido en la geodatabase, denominada DPA_2025.gdb, cubre el espacio territorial continental e insular de la República de Panamá. </gco:CharacterString>
+</description>
+<geographicElement>
+<EX_GeographicBoundingBox>
+<extentTypeCode>
+<gco:Boolean>true</gco:Boolean>
+</extentTypeCode>
+<westBoundLongitude>
+<gco:Decimal>-83.0309</gco:Decimal>
+</westBoundLongitude>
+<eastBoundLongitude>
+<gco:Decimal>-77.1349</gco:Decimal>
+</eastBoundLongitude>
+<southBoundLatitude>
+<gco:Decimal>7.1518</gco:Decimal>
+</southBoundLatitude>
+<northBoundLatitude>
+<gco:Decimal>9.6874</gco:Decimal>
+</northBoundLatitude>
+</EX_GeographicBoundingBox>
+</geographicElement>
+</EX_Extent>
+</extent>
+<extent>
+<EX_Extent>
+<geographicElement>
+<EX_GeographicBoundingBox>
+<extentTypeCode>
+<gco:Boolean>true</gco:Boolean>
+</extentTypeCode>
+<westBoundLongitude>
+<gco:Decimal>-83.0597</gco:Decimal>
+</westBoundLongitude>
+<eastBoundLongitude>
+<gco:Decimal>-77.141316</gco:Decimal>
+</eastBoundLongitude>
+<southBoundLatitude>
+<gco:Decimal>7.187441</gco:Decimal>
+</southBoundLatitude>
+<northBoundLatitude>
+<gco:Decimal>9.650371</gco:Decimal>
+</northBoundLatitude>
+</EX_GeographicBoundingBox>
+</geographicElement>
+</EX_Extent>
+</extent>
+<extent>
+<EX_Extent>
+<geographicElement>
+<EX_GeographicBoundingBox>
+<extentTypeCode>
+<gco:Boolean>true</gco:Boolean>
+</extentTypeCode>
+<westBoundLongitude>
+<gco:Decimal>-83.0597</gco:Decimal>
+</westBoundLongitude>
+<eastBoundLongitude>
+<gco:Decimal>-77.141316</gco:Decimal>
+</eastBoundLongitude>
+<southBoundLatitude>
+<gco:Decimal>7.187441</gco:Decimal>
+</southBoundLatitude>
+<northBoundLatitude>
+<gco:Decimal>9.650371</gco:Decimal>
+</northBoundLatitude>
+</EX_GeographicBoundingBox>
+</geographicElement>
+</EX_Extent>
+</extent>
+</MD_DataIdentification>
+</identificationInfo>
+<contentInfo>
+<MD_CoverageDescription>
+<attributeDescription>
+<gco:RecordType>Identificación del objeto</gco:RecordType>
+</attributeDescription>
+<contentType>
+<MD_CoverageContentTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_CoverageContentTypeCode" codeListValue="physicalMeasurement" codeSpace="ISOTC211/19115">physicalMeasurement</MD_CoverageContentTypeCode>
+</contentType>
+</MD_CoverageDescription>
+</contentInfo>
+<contentInfo>
+<MD_FeatureCatalogueDescription>
+<complianceCode>
+<gco:Boolean>false</gco:Boolean>
+</complianceCode>
+<language>
+<LanguageCode codeList="http://www.loc.gov/standards/iso639-2/php/code_list.php" codeListValue="spa" codeSpace="ISO639-2">spa</LanguageCode>
+</language>
+<includedWithDataset>
+<gco:Boolean>true</gco:Boolean>
+</includedWithDataset>
+<featureCatalogueCitation>
+<CI_Citation>
+<title>
+<gco:CharacterString>Catálogo Nacional de Objetos Geográficos V1</gco:CharacterString>
+</title>
+<alternateTitle>
+<gco:CharacterString>Catálogo Nacional</gco:CharacterString>
+</alternateTitle>
+<date>
+<CI_Date>
+<date>
+<gco:Date>2025-05-02</gco:Date>
+</date>
+<dateType>
+<CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="creation" codeSpace="ISOTC211/19115">creation</CI_DateTypeCode>
+</dateType>
+</CI_Date>
+</date>
+<date>
+<CI_Date>
+<date>
+<gco:Date>2025-07-04</gco:Date>
+</date>
+<dateType>
+<CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="publication" codeSpace="ISOTC211/19115">publication</CI_DateTypeCode>
+</dateType>
+</CI_Date>
+</date>
+<date>
+<CI_Date>
+<date>
+<gco:Date>2025-06-27</gco:Date>
+</date>
+<dateType>
+<CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="revision" codeSpace="ISOTC211/19115">revision</CI_DateTypeCode>
+</dateType>
+</CI_Date>
+</date>
+<presentationForm>
+<CI_PresentationFormCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_PresentationFormCode" codeListValue="imageDigital" codeSpace="ISOTC211/19115">imageDigital</CI_PresentationFormCode>
+</presentationForm>
+</CI_Citation>
+</featureCatalogueCitation>
+</MD_FeatureCatalogueDescription>
+</contentInfo>
+<distributionInfo>
+<MD_Distribution>
+<distributionFormat>
+<MD_Format>
+<name>
+<gco:CharacterString>File Geodatabase Feature Class</gco:CharacterString>
+</name>
+<version>
+<gco:CharacterString>versión 3</gco:CharacterString>
+</version>
+</MD_Format>
+</distributionFormat>
+<distributionFormat>
+<MD_Format>
+<name>
+<gco:CharacterString>WFS</gco:CharacterString>
+</name>
+<version>
+<gco:CharacterString>Version: 1.1.0</gco:CharacterString>
+</version>
+<specification>
+<gco:CharacterString>Web Feature Service Implementation Specification</gco:CharacterString>
+</specification>
+</MD_Format>
+</distributionFormat>
+<distributionFormat>
+<MD_Format>
+<name>
+<gco:CharacterString>WMS</gco:CharacterString>
+</name>
+<version>
+<gco:CharacterString>Version: 1.3.0</gco:CharacterString>
+</version>
+<specification>
+<gco:CharacterString>OpenGIS® Web Map Server Implementation Specification</gco:CharacterString>
+</specification>
+</MD_Format>
+</distributionFormat>
+</MD_Distribution>
+</distributionInfo>
+<dataQualityInfo>
+<DQ_DataQuality>
+<scope>
+<DQ_Scope>
+<level>
+<MD_ScopeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ScopeCode" codeListValue="dataset" codeSpace="ISOTC211/19115">dataset</MD_ScopeCode>
+</level>
+</DQ_Scope>
+</scope>
+<report>
+<DQ_TopologicalConsistency>
+<nameOfMeasure>
+<gco:CharacterString>Topología</gco:CharacterString>
+</nameOfMeasure>
+<measureDescription>
+<gco:CharacterString>Verificar la relación de los polígonos, líneas y puntos en la base de datos de la División político-administrativa de la República de Panamá. Se realizó la creación de una topología en ArcGIS Pro con el objetivo de garantizar la calidad espacial de los datos y verificar que las entidades cumplan con ciertas condiciones geométricas establecidas. </gco:CharacterString>
+</measureDescription>
+<evaluationMethodType>
+<DQ_EvaluationMethodTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#DQ_EvaluationMethodTypeCode" codeListValue="directInternal" codeSpace="ISOTC211/19115">directInternal</DQ_EvaluationMethodTypeCode>
+</evaluationMethodType>
+<evaluationMethodDescription>
+<gco:CharacterString>Durante el proceso, se definieron las siguientes cuatro reglas topológicas, las cuales fueron seleccionadas en función de verificar las características de los datos y los requisitos del análisis espacial. 
+
+• Must Not Intersect (No debe intersecarse): Esta regla garantiza que las entidades dentro de la misma capa (como líneas o polígonos) no se crucen entre sí.
+
+• Must Not Overlap (No debe superponerse): Se asegura de que los polígonos de una misma capa no se superpongan. Esto es fundamental para evitar duplicación.
+
+• Must Not Self-Overlap (No debe solaparse consigo misma): Esta regla asegura que una entidad individual no tenga solapamientos internos.
+
+• Must Not Self-Intersect (No debe autointersecarse): Esta regla impide que una entidad individual se cruce consigo misma.
+</gco:CharacterString>
+</evaluationMethodDescription>
+<dateTime>
+<gco:DateTime>2025-06-12T00:00:00</gco:DateTime>
+</dateTime>
+<result>
+<DQ_ConformanceResult>
+<specification>
+<CI_Citation>
+<title>
+<gco:CharacterString>Especificación Técnica del Conjunto de Datos de Límites Político-Administrativos de la República de Panamá, escala 1:25 000, año 2025. </gco:CharacterString>
+</title>
+<alternateTitle>
+<gco:CharacterString>ET DPA</gco:CharacterString>
+</alternateTitle>
+<date>
+<CI_Date>
+<date>
+<gco:Date>2025-06-12</gco:Date>
+</date>
+<dateType>
+<CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="creation" codeSpace="ISOTC211/19115">creation</CI_DateTypeCode>
+</dateType>
+</CI_Date>
+</date>
+<date>
+<CI_Date>
+<date>
+<gco:Date>2025-07-04</gco:Date>
+</date>
+<dateType>
+<CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="revision" codeSpace="ISOTC211/19115">revision</CI_DateTypeCode>
+</dateType>
+</CI_Date>
+</date>
+</CI_Citation>
+</specification>
+<explanation>
+<gco:CharacterString>Está cumpliendo con los niveles de conformidad establecidos </gco:CharacterString>
+</explanation>
+<pass>
+<gco:Boolean>true</gco:Boolean>
+</pass>
+</DQ_ConformanceResult>
+</result>
+</DQ_TopologicalConsistency>
+</report>
+<lineage>
+<LI_Lineage>
+<statement>
+<gco:CharacterString>Desde el 2011, el Instituto Geográfico Nacional “Tommy Guardia” (IGNTG), asumiendo su responsabilidad de representar el territorio a través de la Cartografía Nacional, ha trabajado en la revisión y actualización de los límites político-administrativos de la república de Panamá. Como se ha mencionado anteriormente, este producto se realizó con la finalidad de ser incorporado a los mapas topográficos oficiales a escala 1:25 000. Por ello, las especificaciones de este producto están referidas a los siguientes documentos: Especificaciones técnicas para la elaboración de mapas topográficos a escala 1:25 000. Informe de Planificación del Trabajo (07-CARTO-01/01- escala 1:25 000. Febrero de 2014. Definiciones técnicas – Representación de la Línea de Costa. Enero de 2013. Versión 1.0 Actas Comisión Mixta Permanente de Límites Panamá - Costa Rica. Actas Comisión Mixta Permanente de la Frontera Colombo - Panameña. En esta primera versión lanzada en el 2016, se empleó los siguientes pasos para su revisión:
+ • Inicio del Proceso 
+ Revisión Bibliográfica 
+a. Consulta de gacetas oficiales a través de los siguientes canales: o http://www.asamblea.gob.pa/legispan-2/ o https://www.gacetaoficial.gob.pa/ o http://infojuridica.procuraduria-admon.gob.pa/Infojuridica/ • 
+b. Revisión de copias selladas en archivos nacionales relacionadas con límites. • Revisión de Producción Geoespacial Disponible:
+ a. Escaneo y georreferenciación de fotografías aéreas de diferentes épocas en zonas de interés. 
+ b. Reproyección de ortofotos utilizando parámetros de transformación del IGNTG. • 
+c. Evaluación de capas de límites político-administrativos provenientes del INEC. • Interpretación de la Norma • 
+Utilización de insumos acordes a la fecha de creación de cada unidad político-administrativa. • Identificación y documentación de inconsistencias persistentes debido a errores en el texto oficial. • 
+Generación de informes para la Comisión de Límites. • Incorporación de Límites Internacionales Integración conforme a los trabajos realizados por las Comisiones de Límites de Panamá-Costa Rica y Panamá-Colombia. • Actualización de Bases de Datos • Actualización de las bases de datos correspondientes a los años 2018 y 2023. • Incorporación de nuevas unidades creadas entre 2023 y 2024 en las regiones de Colón, comarca Gnöbe-Buglé, Darién, comarca Guna Yala, Bocas del Toro, Chiriquí y comarca Naso Tjër Di. 
+ Corroboración del resto de las unidades existentes. •
+ Asignación de Códigos • 
+Utilización de códigos del INEC para asignar identificadores propios a cada unidad. • Aplicación de Controles de Calidad • Verificación de: o Compleción o Consistencia lógica o Exactitud posicional o Calidad temporal o Exactitud temática o Usabilidad • 
+Distribución de la Base de Datos • 
+Disponibilidad en diferentes formatos y servicios web: o GDB o Shapefile o JSON o WMS o WFS </gco:CharacterString>
+</statement>
+<source>
+<LI_Source>
+<description>
+<gco:CharacterString>
+Título Gaceta Oficial de la República de Panamá
+   Título alterno Gaceta Oficial
+   Forma de presentación Digital - pdf
+  CONTACTO 
+   Nombre de la organización  Procuraduría de la Administración
+   Tipo de responsable  Custodio
+   Información sobre el contacto 
+   Ubicación del contacto 
+    Dirección  Calle 34, Ave. Cuba, La Exposición - Antiguo Palacio de Arte
+    País  Panamá
+    Correo electrónico  
+infojuridica@procuraduria-admon.gob.pa
+
+   Teléfono  
+    Número de teléfono  Central: (507) 500-3350 EXT. 3362
+
+   Recursos en línea  
+    Dirección en línea http://infojuridica.procuraduria-admon.gob.pa/Infojuridica/
+  INFORMACIÓN DE LA FECHA  
+   Fecha  1903 - actualidad
+   Tipo de fecha  Creación
+
+</gco:CharacterString>
+</description>
+</LI_Source>
+</source>
+<source>
+<LI_Source>
+<description>
+<gco:CharacterString>Título Mapas Topográficos de la República de Panamá, Escala 1:50 000, Periodo 1960-1993.
+   Título alterno Ocú y Río de Jesús
+   Edición 4039-IV, 3939-I
+   Forma de presentación Imagen digital
+   Identificador 
+    Código Número de grilla
+  CONTACTO 
+   Nombre  Emperatriz Vega
+   Nombre de la organización  Instituto Geográfico Nacional "Tommy Guardia"
+   Cargo  Jefa de Departamento de Cartografía
+   Tipo de responsable  Custodio
+   Información sobre el contacto 
+   Ubicación del contacto 
+    Dirección  Ave. Simón Bolívar, Calle 57 (Melchor Lasso de la Vega) y Avenida 6A Norte Ciudad de Panamá, Rep. de Panamá
+    País  Panamá
+    Correo electrónico  evega@anati.gob.pa
+
+   Teléfono  
+    Número de teléfono  (507) 507-9686
+  INFORMACIÓN DE LA FECHA  
+   Fecha  1960 - 1993
+   Tipo de fecha  Creación
+ Descripción 
+ Escala 
+  Denominador 50 000
+   
+</gco:CharacterString>
+</description>
+<scaleDenominator>
+<MD_RepresentativeFraction>
+<denominator>
+<gco:Integer>50000</gco:Integer>
+</denominator>
+</MD_RepresentativeFraction>
+</scaleDenominator>
+<sourceReferenceSystem>
+<MD_ReferenceSystem>
+<referenceSystemIdentifier>
+<RS_Identifier>
+<code>
+<gco:CharacterString>32617</gco:CharacterString>
+</code>
+</RS_Identifier>
+</referenceSystemIdentifier>
+</MD_ReferenceSystem>
+</sourceReferenceSystem>
+</LI_Source>
+</source>
+</LI_Lineage>
+</lineage>
+</DQ_DataQuality>
+</dataQualityInfo>
+<metadataConstraints>
+<MD_Constraints>
+<useLimitation>
+<gco:CharacterString>Esta representación es meramente, cartográfica. El Instituto Geográfico Nacional “Tommy Guardia”, no se hace responsable del uso de la información que pudiera ser derivada. Por tanto, estamos exentos de toda responsabilidad producida por su incorrección, omisión o falta de actualización. </gco:CharacterString>
+</useLimitation>
+<useLimitation>
+<gco:CharacterString>CC BY-NC-SA</gco:CharacterString>
+</useLimitation>
+</MD_Constraints>
+</metadataConstraints>
+<metadataMaintenance>
+<MD_MaintenanceInformation>
+<maintenanceAndUpdateFrequency>
+<MD_MaintenanceFrequencyCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_MaintenanceFrequencyCode" codeListValue="annually" codeSpace="ISOTC211/19115">annually</MD_MaintenanceFrequencyCode>
+</maintenanceAndUpdateFrequency>
+<updateScope>
+<MD_ScopeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ScopeCode" codeListValue="dataset" codeSpace="ISOTC211/19115">dataset</MD_ScopeCode>
+</updateScope>
+</MD_MaintenanceInformation>
+</metadataMaintenance>
+</MD_Metadata>

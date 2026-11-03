@@ -455,6 +455,53 @@ Servicios disponibles:
 No ejecutes `docker compose up --build` desde la carpeta del backend si el
 `docker-compose.yml` está únicamente en `SiColMed-Infrastructure`.
 
+## Inicialización de la base de datos
+
+Obligatorio en cualquier base de datos nueva o actualizada, con los servicios
+levantados y desde `SiColMed-Infrastructure`:
+
+```powershell
+docker compose exec api alembic upgrade head                   # 1. estructura y funciones
+docker compose exec api python -m app.scripts.seed_catalogos   # 2. catálogos permanentes
+```
+
+`seed_catalogos` se ejecuta en **todos** los ambientes, incluido producción. Carga
+los catálogos desde archivos versionados en `app/scripts/datos/`, sin usar Internet:
+
+- División política de Panamá (provincias, distritos y corregimientos de ANATI, DPA
+  2025): ver `docs/fuentes-division-politica-panama.md`.
+- Especialidades y subespecialidades: ver `docs/fuentes-especialidades.md`.
+- Roles.
+
+Se puede repetir sin duplicar ni borrar nada.
+
+Solo en desarrollo y QA, para tener usuarios, médicos, cuentas y solicitudes
+de prueba:
+
+```powershell
+docker compose exec api python -m app.scripts.seed_qa          # 3. datos de prueba
+```
+
+`seed_qa` funciona con denegación por defecto:
+
+- Solo corre si `ENVIRONMENT` es `development`, `qa` o `test`.
+- Sin la variable, con un valor desconocido o con `production`, se detiene sin tocar la
+  base de datos.
+- En Docker la variable viene del `.env` de `SiColMed-Infrastructure`, que ya la incluye
+  en `.env.example`.
+
+Qué crea y con qué credenciales: `docs/datos-prueba.md`. El comando anterior
+`python -m app.scripts.seed` sigue funcionando: ejecuta los pasos 2 y 3. Si el ambiente no
+está autorizado, no ejecuta ninguno.
+
+Para comprobar los desplegables de dirección, inicia sesión como administrador y
+abre **Registro médico → Nuevo**:
+
+- **Provincia** muestra «Seleccione» y las 13 opciones: 10 provincias y 3 comarcas.
+- **Distrito** y **Corregimiento** empiezan deshabilitados y se llenan al elegir el
+  nivel anterior.
+- Al cambiar una provincia o un distrito se limpian los niveles inferiores.
+
 ## Pruebas con pytest
 
 P6 mantiene y ejecuta las pruebas del backend. Para ejecutar la suite en el
@@ -471,6 +518,11 @@ también se puede ejecutar desde `SiColMed-Infrastructure`:
 ```powershell
 docker compose exec api python -m pytest /code/app/tests -v
 ```
+
+`app/tests/test_seeds_postgres.py` prueba los seeds contra PostgreSQL real. Se
+salta si no se define `SICOLMED_TEST_DATABASE_URL`, que debe apuntar a una base
+de datos de pruebas con `alembic upgrade head` aplicado. No deja cambios: todo
+corre en una transacción que se deshace al final.
 
 ### Ejecución opcional de la API fuera de Docker
 
