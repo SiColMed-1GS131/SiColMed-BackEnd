@@ -45,3 +45,18 @@ def obtener_certificado_pdf(db: Session, id_medico: int) -> str | None:
         text("SELECT certificado_pdf FROM medico WHERE id_medico = :id_medico"),
         {"id_medico": id_medico},
     ).scalar()
+
+# Foto de perfil: reutiliza la columna existente medico.foto (ruta relativa a UPLOADS_DIR).
+
+def guardar_foto(db: Session, id_medico: int, ruta: str) -> None:
+    db.execute(
+        text("UPDATE medico SET foto = :ruta WHERE id_medico = :id_medico"),
+        {"ruta": ruta, "id_medico": id_medico},
+    )
+    db.commit()
+
+def obtener_foto(db: Session, id_medico: int) -> str | None:
+    return db.execute(
+        text("SELECT foto FROM medico WHERE id_medico = :id_medico"),
+        {"id_medico": id_medico},
+    ).scalar()

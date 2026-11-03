@@ -19,8 +19,9 @@ def perfil_publico(perfil: dict) -> MedicoPublico:
     )
     certificaciones = perfil.get("certificaciones") or []
     lugares = perfil.get("lugares_trabajo") or []
+    id_medico = datos.get("id_medico") or perfil.get("id_medico")
     return MedicoPublico(
-        id_medico=datos.get("id_medico") or perfil.get("id_medico"),
+        id_medico=id_medico,
         nombre_completo=nombre,
         numero_idoneidad=datos.get("numero_idoneidad"),
         especialidades=perfil.get("especialidades") or [],
@@ -29,4 +30,5 @@ def perfil_publico(perfil: dict) -> MedicoPublico:
         provincia=(perfil.get("direccion_residencial") or {}).get("provincia"),
         certificacion_vigente=any(c.get("vigente") for c in certificaciones),
         lugar_trabajo=lugares[0].get("empresa_institucion") if lugares else None,
+        foto_url=f"/medicos/{id_medico}/foto" if datos.get("foto") else None,
     )

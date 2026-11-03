@@ -5,6 +5,7 @@ from app.database import get_db
 from app.repositories.medicos import ContratoBDPendiente
 from app.schemas.medicos import (
     CertificadoSubido,
+    FotoSubida,
     MedicoCreado,
     MedicoPublico,
     MedicoRegistro,
@@ -12,7 +13,7 @@ from app.schemas.medicos import (
 )
 from app.security import roles
 from app.security.auth import UsuarioAutenticado, get_usuario_opcional, requiere_rol
-from app.services import certificados
+from app.services import certificados, fotos
 from app.services import medicos as service
 
 router = APIRouter(prefix="/medicos", tags=["Médicos"])
@@ -116,3 +117,50 @@ def descargar_certificado(
         media_type="application/pdf",
         filename=f"certificado_idoneidad_{id_medico}.pdf",
     )
+
+
+# --- Foto de perfil (JPG/PNG) ---------------------------------------------------
+
+@router.post(
+    "/{id_medico}/foto",
+    response_model=FotoSubida,
+    status_code=status.HTTP_201_CREATED,
+    summary="Subir la foto de perfil (JPG o PNG, máx. 2 MB)",
+    description="Solo el administrador o el propio médico. Reemplaza la foto anterior.",
+)
+async def subir_foto(
+    archivo: UploadFile = File(description="Foto JPG o PNG"),
+    id_medico: int = Path(gt=0, description="ID único del médico"),
+    usuario: UsuarioAutenticado = Depends(requiere_rol(roles.MEDICO, roles.ADMIN_CMP)),
+    db: Session = Depends(get_db),
+):
+    if usuario.rol == roles.MEDICO and usuario.id_medico != id_medico:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo puede cambiar la foto de su propio perfil.",
+        )
+    try:
+        ruta = await fotos.guardar_foto(db, id_medico, archivo)
+    except fotos.MedicoSinRegistro as error:
+        raise HTTPException(status_code=404, detail="Médico no encontrado") from error
+    except fotos.FotoDemasiadoGrande as error:
+        raise HTTPException(status_code=413, detail=str(error)) from error
+    except fotos.FotoInvalida as error:
+        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=str(error)) from error
+    return FotoSubida(foto=ruta, url=f"/medicos/{id_medico}/foto")
+
+
+@router.get(
+    "/{id_medico}/foto",
+    response_class=FileResponse,
+    summary="Foto de perfil del médico",
+    description="Pública, como la ficha del directorio.",
+)
+def ver_foto(
+    id_medico: int = Path(gt=0, description="ID único del médico"),
+    db: Session = Depends(get_db),
+):
+    ruta = fotos.ruta_foto(db, id_medico)
+    if ruta is None:
+        raise HTTPException(status_code=404, detail="El médico no tiene foto registrada")
+    return FileResponse(ruta, media_type=fotos.MEDIA_TYPES.get(ruta.suffix, "application/octet-stream"))

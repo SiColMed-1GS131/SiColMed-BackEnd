@@ -67,6 +67,9 @@ class Medico(Base):
         Text, nullable=True
     )
 
+    # Nota: la columna `foto` (arriba) guarda ahora la ruta relativa a UPLOADS_DIR
+    # de la foto subida con POST /medicos/{id}/foto. Fix de emergencia: revisar con BD.
+
     # Ruta relativa a UPLOADS_DIR del PDF del certificado de idoneidad
     # (POST /medicos/{id}/certificado). Fix de emergencia: revisar con BD.
     certificado_pdf: Mapped[str | None] = mapped_column(

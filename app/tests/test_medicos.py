@@ -105,6 +105,7 @@ def test_consulta_sin_token_devuelve_ficha_publica(monkeypatch):
         "provincia": "Panamá",
         "certificacion_vigente": True,
         "lugar_trabajo": "Hospital X",
+        "foto_url": None,
     }
     assert not any(privado in r.text for privado in CAMPOS_PRIVADOS)
 
