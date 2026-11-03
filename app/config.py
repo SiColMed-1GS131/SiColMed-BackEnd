@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     jwt_algorithm: Literal["HS256", "HS384", "HS512"] = "HS256"
     jwt_access_token_expire_minutes: int = Field(default=60, gt=0)
 
+    # Archivos subidos (certificados de idoneidad). En Docker es el volumen
+    # `uploads` montado en /data/uploads; fuera de /code para no mezclarlo con Git.
+    uploads_dir: str = "/data/uploads"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore"

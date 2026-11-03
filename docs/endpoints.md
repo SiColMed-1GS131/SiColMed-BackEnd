@@ -107,4 +107,17 @@ Calcula y obtiene los saldos contables para elaborar el reporte del balance gene
   }
   ```
 
+---
+
+## Nota: funciones `listar_cuentas` y `crear_cuenta` (fix de emergencia)
+
+> ⚠️ **Pendiente de revisión por Base de Datos.** Estas dos funciones las creó **Desarrollo**, no el subgrupo de BD, como fix de emergencia: sin ellas `GET /cuentas` y `POST /cuentas` respondían 400 (`function listar_cuentas(boolean) does not exist`).
+
+* **Archivos:** `app/funciones/listar_cuentas.sql`, `app/funciones/crear_cuenta.sql`
+* **Migración:** `alembic/versions/0b02962cab9d_agrega_funciones_listar_cuentas_y_crear_.py` (llega con `alembic upgrade head`)
+* **Firmas:**
+  * `listar_cuentas(p_activa boolean DEFAULT NULL)` → `TABLE(id_cuenta, nombre, tipo, activa, tiene_movimientos)`. `tiene_movimientos` es `true` si la cuenta aparece en `movimiento_cuenta`; el frontend lo usa para bloquear el cambio de tipo.
+  * `crear_cuenta(p_nombre text, p_tipo text)` → `integer` (id_cuenta). Rechaza tipos distintos de `DEBITO`/`CREDITO` y crea la cuenta activa.
+* **Qué debe confirmar BD:** el orden de `listar_cuentas` (por nombre), el mensaje de error de `crear_cuenta` y si quieren un mensaje propio para nombres repetidos (hoy lo rechaza la restricción `UNIQUE` de `cuenta.nombre`).
+
   

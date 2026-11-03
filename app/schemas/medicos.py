@@ -92,5 +92,46 @@ class MedicoRegistro(Estricto):
 class MedicoCreado(BaseModel):
     id_medico: int = Field(gt=0)
 
+class CertificadoSubido(BaseModel):
+    """Respuesta de POST /medicos/{id}/certificado."""
+
+    certificado_pdf: str  # ruta relativa a UPLOADS_DIR guardada en medico.certificado_pdf
+    url: str              # GET para descargarlo (requiere el mismo permiso)
+
 class PerfilMedico(RootModel[dict[str, Any]]):
     """Respuesta de la función obtener_perfil_medico; contrato de salida pendiente."""
+
+
+class EspecialidadPublica(BaseModel):
+    id_especialidad: int
+    nombre: str
+
+
+class SubespecialidadPublica(BaseModel):
+    id_subespecialidad: int
+    id_especialidad: int | None = None
+    nombre: str
+
+
+class AsociacionPublica(BaseModel):
+    id_asociacion: int
+    nombre: str
+
+
+class MedicoPublico(BaseModel):
+    """Ficha pública del directorio (GET /medicos/{id} sin sesión).
+
+    Solo datos profesionales, los mismos que ya expone el listado GET /medicos.
+    No incluye cédula, fecha de nacimiento, teléfonos, correos, foto, dirección
+    (solo el nombre de la provincia) ni estudios.
+    """
+
+    id_medico: int
+    nombre_completo: str
+    numero_idoneidad: str | None = None
+    especialidades: list[EspecialidadPublica] = []
+    subespecialidades: list[SubespecialidadPublica] = []
+    asociaciones: list[AsociacionPublica] = []
+    provincia: str | None = None
+    certificacion_vigente: bool = False
+    lugar_trabajo: str | None = None

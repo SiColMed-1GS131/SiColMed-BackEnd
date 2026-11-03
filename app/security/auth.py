@@ -25,7 +25,7 @@ from app.security.jwt import (
     decodificar_token,
 )
 
-__all__ = ["UsuarioAutenticado", "get_usuario_actual", "requiere_rol"]
+__all__ = ["UsuarioAutenticado", "get_usuario_actual", "get_usuario_opcional", "requiere_rol"]
 
 # auto_error=False para que los 401 lleven mensajes propios. También agrega el
 # botón "Authorize" de Swagger, donde se pega el access_token.
@@ -57,6 +57,24 @@ def get_usuario_actual(
         raise _no_autenticado("El token expiró.") from None
     except TokenInvalido:
         raise _no_autenticado("Token inválido.") from None
+
+
+def get_usuario_opcional(
+    credenciales: Annotated[
+        HTTPAuthorizationCredentials | None, Depends(_esquema_bearer)
+    ],
+) -> UsuarioAutenticado | None:
+    """Para endpoints públicos que muestran más datos a un usuario autenticado.
+
+    Sin token, o con un token inválido o vencido, devuelve None (visitante
+    anónimo) en vez de responder 401: el endpoint debe seguir siendo público.
+    """
+    if credenciales is None:
+        return None
+    try:
+        return decodificar_token(credenciales.credentials)
+    except TokenInvalido:
+        return None
 
 
 def requiere_rol(*roles: str) -> Callable[..., UsuarioAutenticado]:

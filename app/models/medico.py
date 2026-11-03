@@ -67,6 +67,12 @@ class Medico(Base):
         Text, nullable=True
     )
 
+    # Ruta relativa a UPLOADS_DIR del PDF del certificado de idoneidad
+    # (POST /medicos/{id}/certificado). Fix de emergencia: revisar con BD.
+    certificado_pdf: Mapped[str | None] = mapped_column(
+        Text, nullable=True
+    )
+
     id_direccion: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("direccion.id_direccion"),

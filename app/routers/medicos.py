@@ -1,10 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, File, HTTPException, Path, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.repositories.medicos import ContratoBDPendiente
-from app.schemas.medicos import MedicoCreado, MedicoRegistro, PerfilMedico
+from app.schemas.medicos import (
+    CertificadoSubido,
+    MedicoCreado,
+    MedicoPublico,
+    MedicoRegistro,
+    PerfilMedico,
+)
 from app.security import roles
-from app.security.auth import UsuarioAutenticado, requiere_rol
+from app.security.auth import UsuarioAutenticado, get_usuario_opcional, requiere_rol
+from app.services import certificados
 from app.services import medicos as service
 
 router = APIRouter(prefix="/medicos", tags=["Médicos"])
@@ -23,23 +31,88 @@ def crear_medico(
     except ContratoBDPendiente as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
-@router.get("/{id_medico}", response_model=PerfilMedico,
-            summary="Obtener perfil de médico por ID")
+@router.get(
+    "/{id_medico}",
+    response_model=MedicoPublico | PerfilMedico,
+    summary="Obtener perfil de médico por ID",
+    description=(
+        "Público. Sin sesión devuelve la ficha del directorio (MedicoPublico). "
+        "El administrador, o el médico consultando su propio perfil, recibe el "
+        "perfil completo (PerfilMedico)."
+    ),
+)
 def consultar_medico(
     id_medico: int = Path(gt=0, description="ID único del médico"),
-    usuario: UsuarioAutenticado = Depends(
-        requiere_rol(roles.MEDICO, roles.ADMIN_CMP)
-    ),
+    usuario: UsuarioAutenticado | None = Depends(get_usuario_opcional),
     db: Session = Depends(get_db),
 ):
-    if usuario.rol == roles.MEDICO and usuario.id_medico != id_medico:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Solo puede consultar su propio perfil.",
-        )
     resultado = service.obtener_perfil_medico(db, id_medico)
     if resultado is None:
         raise HTTPException(status_code=404, detail="Médico no encontrado")
     if not isinstance(resultado, dict):
         raise HTTPException(status_code=502, detail="Formato de perfil no válido desde BD")
-    return resultado
+
+    ve_perfil_completo = usuario is not None and (
+        usuario.rol == roles.ADMIN_CMP
+        or (usuario.rol == roles.MEDICO and usuario.id_medico == id_medico)
+    )
+    if ve_perfil_completo:
+        return PerfilMedico(resultado)
+    return service.perfil_publico(resultado)
+
+
+# --- Certificado de idoneidad (PDF) -------------------------------------------
+
+def _exigir_admin_o_propio(usuario: UsuarioAutenticado, id_medico: int) -> None:
+    if usuario.rol == roles.MEDICO and usuario.id_medico != id_medico:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo puede gestionar el certificado de su propio perfil.",
+        )
+
+
+@router.post(
+    "/{id_medico}/certificado",
+    response_model=CertificadoSubido,
+    status_code=status.HTTP_201_CREATED,
+    summary="Subir el certificado de idoneidad (PDF, máx. 5 MB)",
+    description="Solo el administrador o el propio médico. Reemplaza el PDF anterior.",
+)
+async def subir_certificado(
+    archivo: UploadFile = File(description="PDF del certificado de idoneidad"),
+    id_medico: int = Path(gt=0, description="ID único del médico"),
+    usuario: UsuarioAutenticado = Depends(requiere_rol(roles.MEDICO, roles.ADMIN_CMP)),
+    db: Session = Depends(get_db),
+):
+    _exigir_admin_o_propio(usuario, id_medico)
+    try:
+        ruta = await certificados.guardar_certificado(db, id_medico, archivo)
+    except certificados.MedicoSinRegistro as error:
+        raise HTTPException(status_code=404, detail="Médico no encontrado") from error
+    except certificados.CertificadoDemasiadoGrande as error:
+        raise HTTPException(status_code=413, detail=str(error)) from error
+    except certificados.CertificadoInvalido as error:
+        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=str(error)) from error
+    return CertificadoSubido(certificado_pdf=ruta, url=f"/medicos/{id_medico}/certificado")
+
+
+@router.get(
+    "/{id_medico}/certificado",
+    response_class=FileResponse,
+    summary="Descargar el certificado de idoneidad (PDF)",
+    description="Solo el administrador o el propio médico.",
+)
+def descargar_certificado(
+    id_medico: int = Path(gt=0, description="ID único del médico"),
+    usuario: UsuarioAutenticado = Depends(requiere_rol(roles.MEDICO, roles.ADMIN_CMP)),
+    db: Session = Depends(get_db),
+):
+    _exigir_admin_o_propio(usuario, id_medico)
+    ruta = certificados.ruta_certificado(db, id_medico)
+    if ruta is None:
+        raise HTTPException(status_code=404, detail="El médico no tiene certificado registrado")
+    return FileResponse(
+        ruta,
+        media_type="application/pdf",
+        filename=f"certificado_idoneidad_{id_medico}.pdf",
+    )

@@ -10,8 +10,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Usuario sin privilegios
-RUN useradd -m appuser
+# Usuario sin privilegios. La carpeta de uploads se crea aquí con su dueño para
+# que el volumen `uploads` herede esos permisos la primera vez que se monta.
+RUN useradd -m appuser \
+    && mkdir -p /data/uploads \
+    && chown appuser /data/uploads
 USER appuser
 
 EXPOSE 8000

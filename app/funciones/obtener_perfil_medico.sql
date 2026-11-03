@@ -22,7 +22,8 @@ BEGIN
             'edad', EXTRACT(YEAR FROM age(CURRENT_DATE, m.fecha_nacimiento))::integer,
             'telefono_residencial', m.telefono_residencial,
             'celular', m.celular,
-            'email_personal', m.email_personal
+            'email_personal', m.email_personal,
+            'certificado_pdf', m.certificado_pdf
         ),
         'direccion_residencial', (
             SELECT jsonb_build_object(
