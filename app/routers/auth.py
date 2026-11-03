@@ -68,7 +68,7 @@ def me(
     servicio: Servicio,
 ):
     try:
-        return servicio.obtener_usuario(usuario.id_usuario)
+        return servicio.obtener_usuario(usuario.id_usuario, usuario.id_medico)
     except UsuarioNoEncontrado as error:
         raise HTTPException(
             status_code=401,

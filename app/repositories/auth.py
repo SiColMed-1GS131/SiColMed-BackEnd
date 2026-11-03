@@ -8,6 +8,7 @@ Los argumentos van por POSICIÓN, en el orden de la firma de cada función.
 from typing import Any
 
 from fastapi import Depends
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -64,6 +65,17 @@ class AuthRepository:
             {"id_usuario": Arg(id_usuario, "integer")},
         )
         return filas[0] if filas else None
+
+    def obtener_id_medico(self, id_usuario: int) -> int | None:
+        """id_medico asociado al usuario, o None si el usuario no es médico.
+
+        Un administrador (o cualquier rol sin fila en medico) devuelve None.
+        """
+        valor = self.db.execute(
+            text("SELECT id_medico FROM medico WHERE id_usuario = :id_usuario"),
+            {"id_usuario": id_usuario},
+        ).scalar()
+        return int(valor) if valor is not None else None
 
 
 def get_auth_repository(db: Session = Depends(get_db)) -> AuthRepository:

@@ -85,3 +85,4 @@ class UsuarioRespuesta(BaseModel):
     idoneidad: str | None
     role: str
     is_active: bool
+    id_medico: int | None = None

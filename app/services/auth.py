@@ -61,7 +61,7 @@ class AuthService:
         TODO:
         1. Hashear datos.password con Argon2.
         2. id_usuario = repositorio.crear_cuenta_medico(idoneidad, correo, hash).
-        3. Devolver TokenRespuesta(access_token=crear_token_acceso(id_usuario, roles.MEDICO)).
+        3. Devolver TokenRespuesta(access_token=crear_token_acceso(id_usuario, roles.MEDICO, id_medico)).
         """
         password_hash = _hasher.hash(datos.password)
         try:
@@ -81,8 +81,9 @@ class AuthService:
             if "ya tiene una cuenta" in mensaje or "ya está registrado" in mensaje:
                 raise CuentaYaRegistrada from error
             raise
+        id_medico = self.repositorio.obtener_id_medico(id_usuario)
         return TokenRespuesta(
-            access_token=crear_token_acceso(id_usuario, roles.MEDICO)
+            access_token=crear_token_acceso(id_usuario, roles.MEDICO, id_medico)
         )
 
     def login(self, datos: LoginSolicitud) -> TokenRespuesta:
@@ -95,7 +96,7 @@ class AuthService:
            contra un hash de relleno para no revelar por el tiempo de respuesta
            que el correo no existe.
         3. Si fila["activo"] es false → UsuarioInactivo.
-        4. Devolver TokenRespuesta(access_token=crear_token_acceso(fila["id_usuario"], fila["rol"])).
+        4. Devolver TokenRespuesta(access_token=crear_token_acceso(fila["id_usuario"], fila["rol"], id_medico)).
         Requisito del plan: bloquear 3 a 5 minutos tras 5 intentos fallidos
         (tabla LOG_INICIO_SESION); acordar con BD cómo se registra.
         """
@@ -106,11 +107,16 @@ class AuthService:
             raise CredencialesInvalidas
         if not fila["activo"]:
             raise UsuarioInactivo
+        id_medico = self.repositorio.obtener_id_medico(fila["id_usuario"])
         return TokenRespuesta(
-            access_token=crear_token_acceso(fila["id_usuario"], fila["rol"])
+            access_token=crear_token_acceso(
+                fila["id_usuario"], fila["rol"], id_medico
+            )
         )
 
-    def obtener_usuario(self, id_usuario: int) -> UsuarioRespuesta:
+    def obtener_usuario(
+        self, id_usuario: int, id_medico: int | None = None
+    ) -> UsuarioRespuesta:
         """GET /auth/me. El token ya viene validado por get_usuario_actual.
 
         TODO:
@@ -131,6 +137,7 @@ class AuthService:
             idoneidad=fila["numero_idoneidad"],
             role=fila["rol"],
             is_active=fila["activo"],
+            id_medico=id_medico,
         )
 
 
