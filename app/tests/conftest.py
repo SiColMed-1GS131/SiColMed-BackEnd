@@ -2,9 +2,19 @@
 
 Las pruebas no usan PostgreSQL: cada prueba reemplaza su repositorio por una
 versión falsa con app.dependency_overrides.
+
+Cada prueba del plan de pruebas unitarias lleva su ID con el marcador `pu`:
+
+    @pytest.mark.pu("PU-CTA-003")
+    def test_crear_sin_token_responde_401(cliente, repo): ...
+
+Para simular un RAISE EXCEPTION de PostgreSQL se usa `error_bd`:
+
+    from app.tests.conftest import error_bd
 """
 
 import os
+from types import SimpleNamespace
 
 # app.config exige DATABASE_URL al importarse. SQLAlchemy no se conecta hasta
 # que alguien usa el motor, y el fixture `cliente` bloquea get_db, así que
@@ -15,9 +25,25 @@ os.environ.setdefault(
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
+from sqlalchemy.exc import DBAPIError  # noqa: E402
 
 from app.database import get_db  # noqa: E402
 from app.main import app  # noqa: E402
+
+
+def pytest_configure(config):
+    """Registra el marcador del plan de pruebas unitarias (evita PytestUnknownMarkWarning)."""
+    config.addinivalue_line(
+        "markers",
+        "pu(*ids): ID del caso en el plan de pruebas unitarias, por ejemplo PU-CTA-003",
+    )
+
+
+def error_bd(mensaje: str) -> DBAPIError:
+    """Simula un RAISE EXCEPTION de PostgreSQL: la API responde 400 con este mensaje."""
+    original = RuntimeError(mensaje)
+    original.diag = SimpleNamespace(message_primary=mensaje)
+    return DBAPIError("SELECT f()", {}, original, False)
 
 
 def _bd_no_disponible():

@@ -109,11 +109,12 @@ def test_repositorio_filtrar_medicos_envia_parametros_en_orden_de_bd(
 
     assert resultado == {"items": [], "total": 0}
     assert llamada["funcion"] == "filtrar_medicos"
+    # Mismo orden que la firma de filtrar_medicos.sql: p_id_asociacion va antes que p_id_subespecialidad
     assert list(llamada["parametros"]) == [
         "apellido",
         "id_especialidad",
-        "id_subespecialidad",
         "id_asociacion",
+        "id_subespecialidad",
         "certificacion_vigente",
         "id_provincia",
         "lugar_trabajo",
