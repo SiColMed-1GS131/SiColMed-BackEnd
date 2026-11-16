@@ -15,7 +15,8 @@ from app.security import roles
 from app.security.auth import requiere_rol
 from app.services.movimientos import MovimientosService, get_movimientos_service
 
-_requiere_permiso_movimientos = requiere_rol(roles.TESORERO, roles.ADMIN_CMP)
+# DEF-009: el Módulo 5 lo usan el Tesorero y el Administrador de la Asociación (RQ-5.R).
+_requiere_permiso_movimientos = requiere_rol(roles.TESORERO, roles.ADMIN_ASOCIACION, roles.ADMIN_CMP)
 
 router = APIRouter(
     tags=["Movimientos Contables"],
