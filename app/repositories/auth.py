@@ -67,6 +67,37 @@ class AuthRepository:
         )
         return filas[0] if filas else None
 
+    def registrar_intento_inicio_sesion(self, id_usuario: int, exitoso: bool) -> int:
+        """registrar_intento_inicio_sesion(id_usuario, exitoso) → id_log.
+
+        Escribe en log_inicio_sesion con resultado 'EXITOSO' o 'FALLIDO' (DEF-006).
+        """
+        return int(
+            llamar_escalar(
+                self.db,
+                "registrar_intento_inicio_sesion",
+                {
+                    "id_usuario": Arg(id_usuario, "integer"),
+                    "exitoso": Arg(exitoso, "boolean"),
+                },
+                commit=True,
+            )
+        )
+
+    def listar_intentos_inicio_sesion(
+        self, id_usuario: int, limite: int
+    ) -> list[dict[str, Any]]:
+        """listar_intentos_inicio_sesion(id_usuario, limite) → resultado,
+        segundos_transcurridos; del intento más reciente al más antiguo."""
+        return llamar_tabla(
+            self.db,
+            "listar_intentos_inicio_sesion",
+            {
+                "id_usuario": Arg(id_usuario, "integer"),
+                "limite": Arg(limite, "integer"),
+            },
+        )
+
     def obtener_id_medico(self, id_usuario: int) -> int | None:
         """id_medico asociado al usuario, o None si el usuario no es médico.
 
