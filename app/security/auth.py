@@ -24,8 +24,15 @@ from app.security.jwt import (
     UsuarioAutenticado,
     decodificar_token,
 )
+from app.security.revocacion import token_revocado
 
-__all__ = ["UsuarioAutenticado", "get_usuario_actual", "get_usuario_opcional", "requiere_rol"]
+__all__ = [
+    "UsuarioAutenticado",
+    "get_token_actual",
+    "get_usuario_actual",
+    "get_usuario_opcional",
+    "requiere_rol",
+]
 
 # auto_error=False para que los 401 lleven mensajes propios. También agrega el
 # botón "Authorize" de Swagger, donde se pega el access_token.
@@ -48,15 +55,28 @@ def get_usuario_actual(
         HTTPAuthorizationCredentials | None, Depends(_esquema_bearer)
     ],
 ) -> UsuarioAutenticado:
-    """401 si no hay token Bearer, si es inválido o si expiró."""
+    """401 si no hay token Bearer, si es inválido, si expiró o si se cerró la sesión."""
     if credenciales is None:
         raise _no_autenticado("No autenticado.")
     try:
-        return decodificar_token(credenciales.credentials)
+        usuario = decodificar_token(credenciales.credentials)
     except TokenExpirado:
         raise _no_autenticado("El token expiró.") from None
     except TokenInvalido:
         raise _no_autenticado("Token inválido.") from None
+    if token_revocado(credenciales.credentials):
+        raise _no_autenticado("La sesión fue cerrada.")
+    return usuario
+
+
+def get_token_actual(
+    credenciales: Annotated[
+        HTTPAuthorizationCredentials | None, Depends(_esquema_bearer)
+    ],
+    _usuario: Annotated[UsuarioAutenticado, Depends(get_usuario_actual)],
+) -> str:
+    """El JWT del header, ya validado por get_usuario_actual (lo usa POST /auth/logout)."""
+    return credenciales.credentials
 
 
 def get_usuario_opcional(
@@ -72,9 +92,10 @@ def get_usuario_opcional(
     if credenciales is None:
         return None
     try:
-        return decodificar_token(credenciales.credentials)
+        usuario = decodificar_token(credenciales.credentials)
     except TokenInvalido:
         return None
+    return None if token_revocado(credenciales.credentials) else usuario
 
 
 def requiere_rol(*roles: str) -> Callable[..., UsuarioAutenticado]:

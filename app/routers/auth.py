@@ -7,7 +7,7 @@ Mientras no esté registrado, no aparece en Swagger.
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.schemas.auth import (
     LoginSolicitud,
@@ -15,7 +15,8 @@ from app.schemas.auth import (
     TokenRespuesta,
     UsuarioRespuesta,
 )
-from app.security.auth import UsuarioAutenticado, get_usuario_actual
+from app.security.auth import UsuarioAutenticado, get_token_actual, get_usuario_actual
+from app.security.revocacion import revocar_token
 from app.services.auth import (
     AuthService,
     CuentaYaRegistrada,
@@ -60,6 +61,18 @@ def login(datos: LoginSolicitud, servicio: Servicio):
         ) from error
     except UsuarioInactivo as error:
         raise HTTPException(status_code=403, detail="El usuario está inactivo.") from error
+
+
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Cerrar sesión: el token deja de servir aunque no haya vencido",
+)
+def logout(token: Annotated[str, Depends(get_token_actual)]) -> Response:
+    # DEF-008: el frontend (PHP) llama aquí al cerrar sesión. Lista en memoria:
+    # ver las limitaciones en app/security/revocacion.py.
+    revocar_token(token)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/me", response_model=UsuarioRespuesta, summary="Usuario autenticado")
