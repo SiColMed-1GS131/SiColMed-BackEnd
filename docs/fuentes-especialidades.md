@@ -145,8 +145,13 @@ en `especialidades_cts.csv` con la decisión documentada.
 ## Filas que ya existían
 
 La BD de desarrollo tenía «Medicina General», creada por el seed antiguo. No figura en el
-artículo 3. No se borró porque la usan médicos existentes, pero el seed nuevo ya no la
-crea. Base de Datos debe decidir si se conserva.
+artículo 3.
+
+**Decisión (noviembre de 2026, DEF-028):** el líder decidió que «Medicina General» entra al
+catálogo oficial, porque la carga masiva del CMP la usa (452 de las 500 filas del primer
+archivo). `seed_catalogos.py` la agrega desde `ESPECIALIDADES_ADICIONALES`, no desde
+`especialidades_cts.csv`, para que ese archivo siga siendo copia fiel de la fuente. En una BD
+que ya la tenía, el seed la encuentra por nombre y no la duplica.
 
 ## Asociaciones médicas
 
