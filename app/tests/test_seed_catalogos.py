@@ -110,6 +110,14 @@ def test_especialidades_y_subespecialidades():
     assert len(set(subespecialidades)) == len(subespecialidades)
 
 
+def test_medicina_general_entra_al_catalogo_sin_cambiar_la_fuente_oficial():
+    # DEF-028: decisión del líder. El CSV del CTS sigue con sus 31 especialidades.
+    catalogo = sc.especialidades_del_catalogo()
+    assert len(sc.leer_especialidades()) == 31
+    assert len(catalogo) == 32 == len({sc.normalizar(e) for e in catalogo})
+    assert "Medicina General" in catalogo
+
+
 def test_normalizar_ignora_tildes_mayusculas_y_espacios():
     assert sc.normalizar("  Panamá  Oeste ") == sc.normalizar("panama oeste")
     assert sc.normalizar("Ngäbe-Buglé") == "ngabe-bugle"

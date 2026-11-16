@@ -40,6 +40,13 @@ DPA = DATOS / "dpa_2025"
 
 ROLES = (roles.ADMIN_CMP, roles.MEDICO, roles.TESORERO, roles.ADMIN_ASOCIACION)
 
+# Especialidades del catálogo que no vienen del Consejo Técnico de Salud. No se agregan a
+# especialidades_cts.csv porque ese archivo es copia de la fuente oficial.
+# «Medicina General» (DEF-028): la usa la carga masiva del CMP (452 de las 500 filas del
+# primer archivo se rechazaban sin ella) y el líder decidió incluirla en el catálogo
+# oficial (DECISIONES_CONFIRMADAS, sección 3, noviembre de 2026).
+ESPECIALIDADES_ADICIONALES = ("Medicina General",)
+
 # Registros de la capa cartográfica que no son unidades administrativas legales y no
 # deben aparecer como opción en los formularios (ver docs/fuentes-division-politica-panama.md).
 CORREGIMIENTOS_AUXILIARES = {
@@ -105,6 +112,15 @@ def leer_division_politica(carpeta: Path = DPA) -> tuple[list[Unidad], list[Unid
 
 def leer_especialidades(carpeta: Path = DATOS) -> list[str]:
     return [_limpiar(f["nombre"]) for f in _leer_csv(carpeta / "especialidades_cts.csv")]
+
+
+def especialidades_del_catalogo(carpeta: Path = DATOS) -> list[str]:
+    """Las del Consejo Técnico de Salud más ESPECIALIDADES_ADICIONALES, sin repetir."""
+    especialidades = leer_especialidades(carpeta)
+    ya_estan = {normalizar(nombre) for nombre in especialidades}
+    return especialidades + [
+        nombre for nombre in ESPECIALIDADES_ADICIONALES if normalizar(nombre) not in ya_estan
+    ]
 
 
 def leer_subespecialidades(carpeta: Path = DATOS) -> list[tuple[str, str]]:
@@ -210,7 +226,7 @@ def sembrar(db: Session) -> dict[str, dict[str, int]]:
     _sembrar_territorio(db, resumen)
 
     ids_especialidad: dict[str, int] = {}
-    for nombre in leer_especialidades():
+    for nombre in especialidades_del_catalogo():
         ids_especialidad[normalizar(nombre)], accion = _asegurar_por_nombre(db, "especialidad", "id_especialidad", nombre)
         contar("especialidad", accion)
     for nombre, especialidad in leer_subespecialidades():
