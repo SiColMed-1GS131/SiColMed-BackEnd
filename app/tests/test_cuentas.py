@@ -172,13 +172,15 @@ def test_editar_cuenta(cliente, repo):
     assert repo.llamadas == [("editar", 1, "Caja chica", "DEBITO", False)]
 
 
-def test_editar_cuenta_inexistente_devuelve_404(cliente, repo):
-    repo.editada = False
+def test_editar_cuenta_inexistente_devuelve_400(cliente, repo):
+    # DEF-017, decisión 6: el código oficial para un recurso inexistente es 400.
+    # Se simula lo que hace la BD real: editar_cuenta.sql lanza el error (RAISE).
+    repo.error = error_bd("La cuenta 99 no existe")
 
     respuesta = cliente.put("/cuentas/99", json=CUENTA_VALIDA)
 
-    assert respuesta.status_code == 404
-    assert respuesta.json() == {"detail": "No existe la cuenta 99"}
+    assert respuesta.status_code == 400
+    assert respuesta.json() == {"detail": "La cuenta 99 no existe"}
 
 
 def test_editar_muestra_el_error_de_bd_al_cambiar_el_tipo(cliente, repo):

@@ -1,4 +1,7 @@
+from types import SimpleNamespace
 from unittest.mock import Mock
+
+from sqlalchemy.exc import DBAPIError
 from fastapi.testclient import TestClient
 from app.database import get_db
 from app.main import app
@@ -40,6 +43,12 @@ def test_registro_con_dependencias_simuladas(monkeypatch):
     finally:
         app.dependency_overrides.clear()
 
+def _medico_inexistente(db, id_medico):
+    original = RuntimeError(f"El médico {id_medico} no existe")
+    original.diag = SimpleNamespace(message_primary=f"El médico {id_medico} no existe")
+    raise DBAPIError("SELECT obtener_perfil_medico()", {}, original, False)
+
+
 def test_consulta_y_no_encontrado(monkeypatch):
     app.dependency_overrides[get_usuario_opcional] = lambda: UsuarioAutenticado(
         id_usuario=1,
@@ -52,9 +61,13 @@ def test_consulta_y_no_encontrado(monkeypatch):
             r = client.get("/medicos/7")
         assert r.status_code == 200
         assert r.json()["id_medico"] == 7
-        monkeypatch.setattr(service, "obtener_perfil_medico", lambda db, id: None)
+        # DEF-017, decisión 6: inexistente → 400. Se simula lo que hace la BD real:
+        # obtener_perfil_medico.sql lanza 'El médico % no existe' (RAISE).
+        monkeypatch.setattr(service, "obtener_perfil_medico", _medico_inexistente)
         with TestClient(app) as client:
-            assert client.get("/medicos/7").status_code == 404
+            r = client.get("/medicos/7")
+        assert r.status_code == 400
+        assert r.json() == {"detail": "El médico 7 no existe"}
     finally:
         app.dependency_overrides.clear()
 
