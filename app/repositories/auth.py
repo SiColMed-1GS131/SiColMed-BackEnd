@@ -20,12 +20,12 @@ class AuthRepository:
         self.db = db
 
     def crear_cuenta_medico(
-        self, numero_idoneidad: str, correo: str, password_hash: str
+        self, numero_idoneidad: str, cedula: str, correo: str, password_hash: str
     ) -> int:
-        """crear_cuenta_medico(numero_idoneidad, correo, password_hash) → id_usuario.
+        """crear_cuenta_medico(numero_idoneidad, cedula, correo, password_hash) → id_usuario.
 
-        TODO: llamar_escalar con Arg(..., "text") en ese orden y commit=True.
-        Recibe el HASH, nunca la contraseña original.
+        Recibe el HASH, nunca la contraseña original. La cédula debe coincidir con
+        la del médico de esa idoneidad (DEF-004).
         """
         return int(
             llamar_escalar(
@@ -33,6 +33,7 @@ class AuthRepository:
                 "crear_cuenta_medico",
                 {
                     "numero_idoneidad": Arg(numero_idoneidad, "text"),
+                    "cedula": Arg(cedula, "text"),
                     "correo": Arg(correo, "text"),
                     "password_hash": Arg(password_hash, "text"),
                 },
