@@ -36,7 +36,11 @@ def bd(monkeypatch):
 
     def registrar_medico(db, medico):
         if medico.medico.cedula in estado.fallar_en:
-            orig = Exception("Ya existe un médico con la cédula " + medico.medico.cedula)
+            # Como un RAISE EXCEPTION real de registrar_medico (SQLSTATE P0001 y diag).
+            mensaje = "Ya existe un médico con la cédula " + medico.medico.cedula
+            orig = Exception(mensaje)
+            orig.sqlstate = "P0001"
+            orig.diag = SimpleNamespace(message_primary=mensaje, sqlstate="P0001")
             raise DBAPIError("SELECT registrar_medico(...)", {}, orig)
         estado.registrados.append(medico)
         return len(estado.registrados)
