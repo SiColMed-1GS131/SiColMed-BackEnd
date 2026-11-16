@@ -1,11 +1,16 @@
 CREATE OR REPLACE FUNCTION crear_cuenta_medico(
     p_numero_idoneidad text,
+    p_cedula           text,
     p_correo           text,
     p_password_hash    text
 )
 RETURNS integer
 LANGUAGE plpgsql
 AS $$
+-- DEF-004: la idoneidad es pública (directorio), así que además se exige la cédula
+-- del médico. Las dos se comparan sin espacios y en mayúsculas (8-123-456, PE-1-234).
+-- Si no coinciden, el error es el mismo que cuando la idoneidad no existe, para no
+-- revelar cuál de los dos datos falló.
 DECLARE
     v_correo         text := lower(btrim(p_correo));
     v_id_medico      integer;
@@ -15,6 +20,9 @@ DECLARE
 BEGIN
     IF coalesce(btrim(p_numero_idoneidad), '') = '' THEN
         RAISE EXCEPTION 'El número de idoneidad es obligatorio';
+    END IF;
+    IF coalesce(btrim(p_cedula), '') = '' THEN
+        RAISE EXCEPTION 'La cédula es obligatoria';
     END IF;
     IF v_correo IS NULL OR v_correo !~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$' THEN
         RAISE EXCEPTION 'El correo no es válido';
@@ -27,6 +35,8 @@ BEGIN
       INTO v_id_medico, v_usuario_actual
       FROM medico m
      WHERE m.numero_idoneidad = btrim(p_numero_idoneidad)
+       AND upper(regexp_replace(m.cedula, '\s', '', 'g'))
+         = upper(regexp_replace(p_cedula, '\s', '', 'g'))
        FOR UPDATE;
     IF NOT FOUND THEN
         RAISE EXCEPTION 'No existe un médico registrado con el número de idoneidad %', btrim(p_numero_idoneidad);

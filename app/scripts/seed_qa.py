@@ -261,6 +261,7 @@ def _sembrar_medico(db: Session, hasher: PasswordHash, datos: dict[str, Any]) ->
     if not tiene_usuario and correo_usado is None:
         llamar_escalar(db, "crear_cuenta_medico", {
             "p_numero_idoneidad": datos["numero_idoneidad"],
+            "p_cedula": datos["cedula"],
             "p_correo": datos["correo"],
             "p_password_hash": hasher.hash(datos["password"]),
         })

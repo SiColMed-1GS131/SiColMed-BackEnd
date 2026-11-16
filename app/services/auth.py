@@ -67,6 +67,7 @@ class AuthService:
         try:
             id_usuario = self.repositorio.crear_cuenta_medico(
                 datos.numero_idoneidad,
+                datos.cedula,
                 str(datos.correo),
                 password_hash,
             )

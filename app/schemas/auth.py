@@ -21,6 +21,8 @@ class RegistroSolicitud(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     numero_idoneidad: str = Field(min_length=1, max_length=100)
+    # DEF-004: la idoneidad es pública; la cédula confirma que quien se registra es el médico.
+    cedula: str = Field(min_length=1, max_length=30)
     correo: EmailStr
     password: str = Field(min_length=8, max_length=128)
 
@@ -30,6 +32,14 @@ class RegistroSolicitud(BaseModel):
         value = value.strip()
         if not value:
             raise ValueError("El número de idoneidad es obligatorio.")
+        return value
+
+    @field_validator("cedula")
+    @classmethod
+    def cedula_no_vacia(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("La cédula es obligatoria.")
         return value
 
     @field_validator("password")
