@@ -38,7 +38,9 @@ def _subir(cliente, id_medico=7, contenido=PDF, nombre="cert.pdf", tipo="applica
     return cliente.post(f"/medicos/{id_medico}/certificado", files={"archivo": (nombre, contenido, tipo)})
 
 
-def test_medico_sube_y_descarga_su_certificado(cliente, bd, tmp_path):
+def test_admin_sube_y_el_medico_descarga_su_certificado(cliente, bd, tmp_path):
+    # Sección 5 de las decisiones: el certificado de idoneidad no lo edita el médico.
+    _como(roles.ADMIN_CMP)
     respuesta = _subir(cliente)
 
     assert respuesta.status_code == 201
@@ -46,10 +48,19 @@ def test_medico_sube_y_descarga_su_certificado(cliente, bd, tmp_path):
     assert bd == {7: "certificados/7.pdf"}
     assert (tmp_path / "certificados" / "7.pdf").read_bytes() == PDF
 
+    _como(roles.MEDICO, id_medico=7)
     descarga = cliente.get("/medicos/7/certificado")
     assert descarga.status_code == 200
     assert descarga.headers["content-type"] == "application/pdf"
     assert descarga.content == PDF
+
+
+def test_medico_no_puede_subir_su_propio_certificado(cliente, bd):
+    # Sección 5: "Certificado de Idoneidad (PDF)" no es editable por el propio médico.
+    respuesta = _subir(cliente)
+
+    assert respuesta.status_code == 403
+    assert bd == {}
 
 
 def test_admin_puede_subir_el_de_cualquier_medico(cliente, bd):
@@ -76,6 +87,7 @@ def test_otros_roles_no_pueden_subir(cliente, bd):
     (PDF, "cert.pdf", "text/plain", "application/pdf"),
 ])
 def test_rechaza_lo_que_no_es_pdf(cliente, bd, tmp_path, contenido, nombre, tipo, mensaje):
+    _como(roles.ADMIN_CMP)
     respuesta = _subir(cliente, contenido=contenido, nombre=nombre, tipo=tipo)
 
     assert respuesta.status_code == 415
@@ -85,6 +97,7 @@ def test_rechaza_lo_que_no_es_pdf(cliente, bd, tmp_path, contenido, nombre, tipo
 
 
 def test_rechaza_mas_de_5_mb(cliente, bd):
+    _como(roles.ADMIN_CMP)
     respuesta = _subir(cliente, contenido=PDF + b"0" * (5 * 1024 * 1024))
 
     assert respuesta.status_code == 413

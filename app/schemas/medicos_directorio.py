@@ -31,8 +31,12 @@ CamposActualizablesDireccion: Final[frozenset[str]] = frozenset(
         "id_corregimiento",
     }
 )
+# Lo que el propio médico puede editar (sección 2.3 del documento del CMP: lo subrayado
+# no se edita). Cédula, registro médico, idoneidad, certificado PDF, título básico,
+# certificación, educación continua y estado de cuenta quedan fuera (los edita el admin).
 CamposActualizablesPerfilMedico: Final[frozenset[str]] = frozenset(
     {
+        "fecha_nacimiento",
         "primer_nombre",
         "segundo_nombre",
         "apellido_paterno",
@@ -157,9 +161,15 @@ class ActualizarMedicoSolicitud(BaseModel):
 
 
 class ActualizarPerfilMedicoSolicitud(BaseModel):
-    """Campos no sensibles que el médico puede actualizar directamente."""
+    """Campos no sensibles que el médico puede actualizar directamente.
+
+    extra="forbid": cualquier campo no editable (cédula, registro médico, estudios,
+    certificación...) responde 422.
+    """
 
     model_config = ConfigDict(extra="forbid")
+
+    fecha_nacimiento: date | None = None
 
     primer_nombre: str | None = Field(default=None, min_length=1)
     segundo_nombre: str | None = Field(default=None, min_length=1)

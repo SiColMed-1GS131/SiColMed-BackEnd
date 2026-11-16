@@ -100,12 +100,15 @@ def _exigir_admin_o_propio(usuario: UsuarioAutenticado, id_medico: int) -> None:
     response_model=CertificadoSubido,
     status_code=status.HTTP_201_CREATED,
     summary="Subir el certificado de idoneidad (PDF, máx. 5 MB)",
-    description="Solo el administrador o el propio médico. Reemplaza el PDF anterior.",
+    description=(
+        "Solo el administrador. El certificado de idoneidad no lo edita el propio médico "
+        "(sección 2.3 del documento del CMP, decisión del líder). Reemplaza el PDF anterior."
+    ),
 )
 async def subir_certificado(
     archivo: UploadFile = File(description="PDF del certificado de idoneidad"),
     id_medico: int = Path(gt=0, description="ID único del médico"),
-    usuario: UsuarioAutenticado = Depends(requiere_rol(roles.MEDICO, roles.ADMIN_CMP)),
+    usuario: UsuarioAutenticado = Depends(requiere_rol(roles.ADMIN_CMP)),
     db: Session = Depends(get_db),
 ):
     _exigir_admin_o_propio(usuario, id_medico)
