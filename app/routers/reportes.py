@@ -4,6 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
+from app.routers.dependencias import rango_de_fechas
 from app.schemas.movimientos import RangoFechasParams
 from app.schemas.reportes import BalanceGeneralResponse
 from app.security import roles
@@ -26,5 +27,8 @@ Servicio = Annotated[ReportesService, Depends(get_reportes_service)]
     response_model=BalanceGeneralResponse,
     summary="Balance general en un rango de fechas",
 )
-def calcular_balance_general(servicio: Servicio, rango: RangoFechasParams = Depends()):
+def calcular_balance_general(
+    servicio: Servicio,
+    rango: RangoFechasParams = Depends(rango_de_fechas),  # DEF-012: 422 y no 500
+):
     return servicio.balance_general(rango)

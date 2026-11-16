@@ -5,6 +5,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Query, status
 
+from app.routers.dependencias import rango_de_fechas
 from app.schemas.movimientos import (
     FilaMovimientoCuenta,
     FilaMovimientoDiario,
@@ -53,6 +54,6 @@ def consultar_movimientos_diarios(
 def consultar_movimientos_por_cuenta(
     servicio: Servicio,
     id_cuenta: int = Path(gt=0, description="Identificador de la cuenta"),
-    rango: RangoFechasParams = Depends(),
+    rango: RangoFechasParams = Depends(rango_de_fechas),  # DEF-012: 422 y no 500
 ):
     return servicio.consultar_por_cuenta(id_cuenta, rango)
