@@ -29,9 +29,18 @@ app.include_router(auth.router)
 app.include_router(movimientos.router)
 app.include_router(reportes.router)
 
+def origenes_cors(valor: str) -> list[str]:
+    """Separa CORS_ORIGINS por comas y quita espacios y la barra final de cada origen.
+
+    El navegador envía el Origin sin barra final (http://localhost:3000); si el
+    .env trae "http://localhost:3000/", la comparación falla y el preflight da 400.
+    """
+    return [o.strip().rstrip("/") for o in valor.split(",")]
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in settings.cors_origins.split(",")],
+    allow_origins=origenes_cors(settings.cors_origins),
     allow_methods=["*"],
     allow_headers=["*"],
 )
