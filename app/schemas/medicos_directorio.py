@@ -1,7 +1,7 @@
 """Schemas para filtros y actualización administrativa de médicos."""
 
 from datetime import date
-from typing import Final
+from typing import ClassVar, Final
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
@@ -121,8 +121,50 @@ class ActualizarDireccionSolicitud(BaseModel):
     id_corregimiento: int | None = Field(default=None, ge=1)
 
 
+class _SeccionConId(BaseModel):
+    """Una fila existente de la sección: su id y al menos un campo a cambiar (DEF-014/015)."""
+
+    model_config = ConfigDict(extra="forbid")
+    _CAMPO_ID: ClassVar[str] = ""
+
+    @model_validator(mode="after")
+    def al_menos_un_campo(self):
+        if not (self.model_fields_set - {self._CAMPO_ID}):
+            raise ValueError("Indica al menos un campo a cambiar además del id.")
+        return self
+
+
+class ActualizarLugarTrabajoSolicitud(_SeccionConId):
+    _CAMPO_ID: ClassVar[str] = "id_lugar_trabajo"
+    id_lugar_trabajo: int = Field(ge=1)
+    empresa_institucion: str | None = Field(default=None, min_length=1)
+    cargo: str | None = Field(default=None, min_length=1)
+    telefono_trabajo: str | None = Field(default=None, min_length=1)
+    email_laboral: EmailStr | None = None
+
+
+class ActualizarEstudioMedicoSolicitud(_SeccionConId):
+    _CAMPO_ID: ClassVar[str] = "id_estudio"
+    id_estudio: int = Field(ge=1)
+    tipo_estudio: str | None = Field(default=None, min_length=1)
+    titulo: str | None = Field(default=None, min_length=1)
+    institucion: str | None = Field(default=None, min_length=1)
+    lugar: str | None = Field(default=None, min_length=1)
+    fecha: date | None = None
+
+
+class ActualizarCertificacionSolicitud(_SeccionConId):
+    _CAMPO_ID: ClassVar[str] = "id_certificacion"
+    id_certificacion: int = Field(ge=1)
+    vigente: bool | None = None
+    fecha_obtencion: date | None = None
+    puntaje: int | None = Field(default=None, ge=0)
+    fecha_expiracion: date | None = None
+
+
 class CambiosRelacionesSolicitud(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    # DEF-014: "quitar" (y "agregar") son opcionales; el service siempre envía los dos.
     agregar: list[int] = Field(default_factory=list)
     quitar: list[int] = Field(default_factory=list)
 
@@ -158,6 +200,11 @@ class ActualizarMedicoSolicitud(BaseModel):
     especialidades: CambiosRelacionesSolicitud | None = None
     subespecialidades: CambiosRelacionesSolicitud | None = None
     asociaciones: CambiosRelacionesSolicitud | None = None
+    # DEF-014/015 (decisión 4): secciones que actualizar_medico.sql ya acepta. Cada
+    # elemento actualiza una fila existente, identificada por su id (GET /medicos/{id}).
+    lugar_trabajo: list[ActualizarLugarTrabajoSolicitud] | None = Field(default=None, min_length=1)
+    estudio_medico: list[ActualizarEstudioMedicoSolicitud] | None = Field(default=None, min_length=1)
+    certificacion: list[ActualizarCertificacionSolicitud] | None = Field(default=None, min_length=1)
 
 
 class ActualizarPerfilMedicoSolicitud(BaseModel):

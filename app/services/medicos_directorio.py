@@ -19,6 +19,10 @@ from app.schemas.medicos_directorio import (
     MedicoResumen,
 )
 
+# Secciones de PATCH /medicos/{id} además de los datos personales y la dirección.
+_SECCIONES_RELACION = frozenset({"especialidades", "subespecialidades", "asociaciones"})
+_SECCIONES_CON_ID = frozenset({"lugar_trabajo", "estudio_medico", "certificacion"})
+
 
 class RepositorioFiltroMedicos(Protocol):
     """Contrato que debe cumplir el repositorio de filtrado."""
@@ -95,7 +99,7 @@ def actualizar_medico(
 
     cambios = datos.model_dump(exclude_unset=True)
     campos_no_permitidos = set(cambios) - (
-        CamposActualizablesMedico | {"direccion", "especialidades", "subespecialidades", "asociaciones"}
+        CamposActualizablesMedico | _SECCIONES_RELACION | _SECCIONES_CON_ID | {"direccion"}
     )
     if campos_no_permitidos:
         nombres = ", ".join(sorted(campos_no_permitidos))
@@ -115,11 +119,19 @@ def actualizar_medico(
                 f"Campos de dirección no permitidos: {nombres}."
             )
 
+    # DEF-014: actualizar_medico.sql exige "agregar" y "quitar" juntos; exclude_unset
+    # quitaba el que no se envió. Se manda la relación completa (el faltante va como []).
+    for seccion in _SECCIONES_RELACION & set(cambios):
+        cambios[seccion] = getattr(datos, seccion).model_dump()
+
     # La función SQL actualizar_medico espera los datos personales dentro de "medico".
     campos_personales = {k: v for k, v in cambios.items() if k in CamposActualizablesMedico}
     payload = {k: v for k, v in cambios.items() if k not in CamposActualizablesMedico}
     if campos_personales:
         payload["medico"] = campos_personales
+    # DEF-015: la API usa "certificacion" (igual que POST /medicos); la BD, "certificaciones".
+    if "certificacion" in payload:
+        payload["certificaciones"] = payload.pop("certificacion")
 
     actualizado = repositorio.actualizar_medico(
         db,
