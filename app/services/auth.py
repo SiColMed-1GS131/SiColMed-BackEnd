@@ -47,8 +47,61 @@ class CuentaYaRegistrada(Exception):
     pass
 
 
+class CuentaBloqueada(Exception):
+    """Demasiados intentos fallidos seguidos (DEF-006). `segundos`: tiempo que falta."""
+
+    def __init__(self, segundos: int):
+        super().__init__(segundos)
+        self.segundos = segundos
+
+
 _hasher = PasswordHash.recommended()
 _hash_relleno = _hasher.hash("contraseña-no-válida-para-login")
+
+# Bloqueo por intentos fallidos (DEF-006): tras 5 fallos consecutivos la cuenta
+# queda bloqueada 5 minutos, aunque después llegue la contraseña correcta.
+MAX_INTENTOS_FALLIDOS = 5
+SEGUNDOS_DE_BLOQUEO = 5 * 60
+# Intentos que se leen del log para calcular el bloqueo (sobra para 5 fallos).
+_INTENTOS_A_REVISAR = 100
+EXITOSO = "EXITOSO"
+
+
+def segundos_de_bloqueo(
+    intentos: list[dict],
+    max_fallidos: int = MAX_INTENTOS_FALLIDOS,
+    duracion: int = SEGUNDOS_DE_BLOQUEO,
+) -> int:
+    """Segundos que faltan para desbloquear la cuenta; 0 si no está bloqueada.
+
+    `intentos` viene de listar_intentos_inicio_sesion, del más reciente al más
+    antiguo. Reglas:
+    - Solo cuentan los fallos posteriores al último inicio de sesión exitoso.
+    - Al llegar a `max_fallidos` fallos seguidos, la cuenta se bloquea `duracion`
+      segundos contados desde ese último fallo.
+    - Los intentos hechos durante un bloqueo se registran, pero no lo alargan.
+    - Cuando el bloqueo vence, la cuenta de fallos vuelve a empezar desde cero.
+    """
+    # Momento de cada fallo en segundos relativos a ahora (0): -30 es "hace 30 s".
+    fallos: list[int] = []
+    for intento in intentos:
+        if intento["resultado"] == EXITOSO:
+            break
+        fallos.append(-int(intento["segundos_transcurridos"]))
+
+    fin_del_bloqueo: int | None = None
+    seguidos = 0
+    for momento in reversed(fallos):  # del más antiguo al más reciente
+        if fin_del_bloqueo is not None and momento < fin_del_bloqueo:
+            continue  # intento durante el bloqueo
+        seguidos += 1
+        if seguidos == max_fallidos:
+            fin_del_bloqueo = momento + duracion
+            seguidos = 0
+
+    if fin_del_bloqueo is None:
+        return 0
+    return max(0, fin_del_bloqueo)
 
 
 class AuthService:
@@ -98,15 +151,30 @@ class AuthService:
         3. Si fila["activo"] es false → UsuarioInactivo.
         4. Devolver TokenRespuesta(access_token=crear_token_acceso(fila["id_usuario"], fila["rol"], id_medico)).
         Requisito del plan: bloquear 3 a 5 minutos tras 5 intentos fallidos
-        (tabla LOG_INICIO_SESION); acordar con BD cómo se registra.
+        (tabla LOG_INICIO_SESION). Cada intento sobre una cuenta existente queda
+        en el log; un correo que no existe no se puede registrar (id_usuario es
+        obligatorio) y solo responde CredencialesInvalidas.
         """
         fila = self.repositorio.obtener_credenciales_usuario(str(datos.username))
+        if fila:
+            intentos = self.repositorio.listar_intentos_inicio_sesion(
+                fila["id_usuario"], _INTENTOS_A_REVISAR
+            )
+            restantes = segundos_de_bloqueo(intentos)
+            if restantes > 0:
+                self.repositorio.registrar_intento_inicio_sesion(fila["id_usuario"], False)
+                raise CuentaBloqueada(restantes)
         hash_guardado = fila["password_hash"] if fila else _hash_relleno
         password_valida = _hasher.verify(datos.password, hash_guardado)
-        if not fila or not password_valida:
+        if not fila:
+            raise CredencialesInvalidas
+        if not password_valida:
+            self.repositorio.registrar_intento_inicio_sesion(fila["id_usuario"], False)
             raise CredencialesInvalidas
         if not fila["activo"]:
+            self.repositorio.registrar_intento_inicio_sesion(fila["id_usuario"], False)
             raise UsuarioInactivo
+        self.repositorio.registrar_intento_inicio_sesion(fila["id_usuario"], True)
         id_medico = self.repositorio.obtener_id_medico(fila["id_usuario"])
         return TokenRespuesta(
             access_token=crear_token_acceso(

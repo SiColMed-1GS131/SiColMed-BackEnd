@@ -18,6 +18,7 @@ from app.schemas.auth import (
 from app.security.auth import UsuarioAutenticado, get_usuario_actual
 from app.services.auth import (
     AuthService,
+    CuentaBloqueada,
     CuentaYaRegistrada,
     CredencialesInvalidas,
     MedicoNoEncontrado,
@@ -52,6 +53,16 @@ def registrar(datos: RegistroSolicitud, servicio: Servicio):
 def login(datos: LoginSolicitud, servicio: Servicio):
     try:
         return servicio.login(datos)
+    except CuentaBloqueada as error:
+        minutos = max(1, -(-error.segundos // 60))  # redondeo hacia arriba
+        raise HTTPException(
+            status_code=429,
+            detail=(
+                "Demasiados intentos fallidos. La cuenta está bloqueada; "
+                f"intenta de nuevo en {minutos} minuto{'s' if minutos != 1 else ''}."
+            ),
+            headers={"Retry-After": str(error.segundos)},
+        ) from error
     except CredencialesInvalidas as error:
         raise HTTPException(
             status_code=401,
