@@ -69,6 +69,8 @@ ORDER BY 1, 2;
 | Rol | Correo | Contraseña | Variables para cambiarlas |
 |---|---|---|---|
 | admin_cmp | admin@colmed.dev | Admin123! | `DEMO_ADMIN_EMAIL`, `DEMO_ADMIN_PASSWORD` |
+| tesorero | tesorero@colmed.dev | Tesorero123! | `DEMO_TESORERO_EMAIL`, `DEMO_TESORERO_PASSWORD` |
+| admin_asociacion | asociacion@colmed.dev | Asociacion123! | `DEMO_ADMIN_ASOCIACION_EMAIL`, `DEMO_ADMIN_ASOCIACION_PASSWORD` |
 | medico | medico1@colmed.dev | Medico123! | `DEMO_MEDICO1_EMAIL`, `DEMO_MEDICO1_PASSWORD` |
 | medico | medico2@colmed.dev | Medico123! | `DEMO_MEDICO2_EMAIL`, `DEMO_MEDICO2_PASSWORD` |
 | medico | medico3@colmed.dev | Medico123! | `DEMO_MEDICO3_EMAIL`, `DEMO_MEDICO3_PASSWORD` |
@@ -77,18 +79,14 @@ ORDER BY 1, 2;
 - **Contraseñas:** en la base de datos solo se guarda su hash (pwdlib), nunca el texto.
 - **Variables `DEMO_*`:** cada valor de la tabla se puede cambiar con su variable de
   entorno.
-- **Tesorero y admin de asociación:** no hay usuarios de prueba, porque ningún mecanismo
-  real los crea:
-  - `crear_usuario_admin.sql` crea solo `admin_cmp`.
-  - `crear_cuenta_medico.sql` y `POST /auth/register` crean solo `medico`, y exigen un
-    médico registrado.
-  - No hay endpoint ni pantalla de administración de usuarios.
+- **Tesorero y admin de asociación (DEF-009):** se crean con `crear_usuario_modulo5.sql`,
+  con las mismas reglas que `crear_usuario_admin.sql` (la crea un `admin_cmp` activo,
+  correo único y registro en `auditoria`). Es un fix de emergencia hecho por Desarrollo
+  (migración `c405c412a0d3`) que Base de Datos debe revisar. Sigue sin haber endpoint ni
+  pantalla de administración de usuarios.
 
-  Insertarlos directo en `usuario` saltaría las validaciones y la auditoría que hacen esas
-  funciones. Además, `admin_asociacion` no tiene cómo indicar *qué* asociación administra:
-  `usuario` no tiene esa relación y el catálogo de asociaciones está vacío. Base de Datos
-  debe definir una función de alta para esos roles. Con ella, el escenario se agrega a
-  `seed_qa.py`.
+  Limitación: `admin_asociacion` no tiene cómo indicar *qué* asociación administra:
+  `usuario` no tiene esa relación y el catálogo de asociaciones está vacío.
 
 ## Médicos y certificaciones
 

@@ -81,6 +81,14 @@ def _env(nombre: str, defecto: str) -> str:
 ADMIN_CORREO = _env("DEMO_ADMIN_EMAIL", "admin@colmed.dev")
 ADMIN_PASSWORD = _env("DEMO_ADMIN_PASSWORD", "Admin123!")
 
+# DEF-009: usuarios del Módulo 5 (RQ-5.R), creados con crear_usuario_modulo5.
+USUARIOS_MODULO5: tuple[dict[str, str], ...] = (
+    {"rol": "tesorero", "correo": _env("DEMO_TESORERO_EMAIL", "tesorero@colmed.dev"),
+     "password": _env("DEMO_TESORERO_PASSWORD", "Tesorero123!")},
+    {"rol": "admin_asociacion", "correo": _env("DEMO_ADMIN_ASOCIACION_EMAIL", "asociacion@colmed.dev"),
+     "password": _env("DEMO_ADMIN_ASOCIACION_PASSWORD", "Asociacion123!")},
+)
+
 # Certificaciones: vigente se calcula también en obtener_perfil_medico a partir de
 # fecha_expiracion; aquí se guarda coherente con las fechas.
 VIGENTE = {"vigente": True, "fecha_obtencion": date(2025, 1, 15), "puntaje": 95, "fecha_expiracion": date(2030, 1, 15)}
@@ -206,6 +214,22 @@ def _sembrar_admin(db: Session, hasher: PasswordHash) -> int:
     return int(id_usuario)
 
 
+def _sembrar_usuarios_modulo5(db: Session, hasher: PasswordHash, id_admin: int) -> None:
+    for datos in USUARIOS_MODULO5:
+        existente = _uno(db, "SELECT id_usuario FROM usuario WHERE lower(correo) = lower(:correo)",
+                         correo=datos["correo"])
+        if existente is not None:
+            print(f"  {datos['rol']} {datos['correo']}: existente (id {existente})")
+            continue
+        id_usuario = llamar_escalar(db, "crear_usuario_modulo5", {
+            "p_correo": datos["correo"],
+            "p_password_hash": hasher.hash(datos["password"]),
+            "p_rol": datos["rol"],
+            "p_id_administrador": Arg(id_admin, "integer"),
+        })
+        print(f"  {datos['rol']} {datos['correo']}: creado (id {id_usuario})")
+
+
 def _sembrar_medico(db: Session, hasher: PasswordHash, datos: dict[str, Any]) -> int:
     id_medico = _uno(db, "SELECT id_medico FROM medico WHERE numero_idoneidad = :n", n=datos["numero_idoneidad"])
     creado = id_medico is None
@@ -325,7 +349,8 @@ def sembrar(db: Session) -> None:
     verificar_ambiente()
     hasher = PasswordHash.recommended()
     id_admin = _sembrar_admin(db, hasher)
-    ids_medico = {m["numero_idoneidad"]: _sembrar_medico(db, hasher, m) for m in MEDICOS}
+    _sembrar_usuarios_modulo5(db, hasher, id_admin)
+    ids_medico ={m["numero_idoneidad"]: _sembrar_medico(db, hasher, m) for m in MEDICOS}
     _sembrar_cuentas(db)
     _sembrar_solicitudes(db, id_admin, ids_medico)
 
@@ -353,6 +378,8 @@ def main() -> int:
 
     print("Datos QA listos (contraseñas de prueba en docs/datos-prueba.md):")
     print(f"  admin:   {ADMIN_CORREO}")
+    for datos in USUARIOS_MODULO5:
+        print(f"  {datos['rol']}: {datos['correo']}")
     for datos in MEDICOS:
         print(f"  medico:  {datos['correo']} ({datos['escenario']})")
     return 0

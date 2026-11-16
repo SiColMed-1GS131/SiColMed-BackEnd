@@ -11,7 +11,8 @@ from app.security import roles
 from app.security.auth import requiere_rol
 from app.services.reportes import ReportesService, get_reportes_service
 
-_requiere_permiso_reportes = requiere_rol(roles.ADMIN_ASOCIACION, roles.ADMIN_CMP)
+# DEF-009: el Módulo 5 lo usan el Tesorero y el Administrador de la Asociación (RQ-5.R).
+_requiere_permiso_reportes = requiere_rol(roles.ADMIN_ASOCIACION, roles.TESORERO, roles.ADMIN_CMP)
 
 router = APIRouter(
     prefix="/reportes",

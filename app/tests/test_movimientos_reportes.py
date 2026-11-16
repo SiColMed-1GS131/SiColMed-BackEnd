@@ -184,7 +184,8 @@ def test_balance_separa_saldos_deudores_y_acreedores(cliente, repo_rep):
 
 
 def test_balance_rechaza_rol_sin_permiso(cliente, repo_rep):
-    _como(roles.TESORERO)
+    # DEF-009: el tesorero sí tiene permiso (RQ-5.R); el médico no.
+    _como(roles.MEDICO)
 
     respuesta = cliente.get(
         "/reportes/balance-general",
@@ -192,3 +193,25 @@ def test_balance_rechaza_rol_sin_permiso(cliente, repo_rep):
     )
 
     assert respuesta.status_code == 403
+
+
+# --- DEF-009: el Módulo 5 lo usan el Tesorero y el Admin. de la Asociación (RQ-5.R) ----
+
+@pytest.mark.parametrize("rol", [roles.TESORERO, roles.ADMIN_ASOCIACION, roles.ADMIN_CMP])
+def test_movimientos_permitidos_a_los_roles_del_modulo_5(cliente, repo_mov, rol):
+    _como(rol)
+
+    assert cliente.get("/movimientos", params={"fecha": "2026-11-02"}).status_code == 200
+    assert cliente.post("/movimientos", json=MOVIMIENTO_VALIDO).status_code == 201
+
+
+@pytest.mark.parametrize("rol", [roles.TESORERO, roles.ADMIN_ASOCIACION, roles.ADMIN_CMP])
+def test_balance_permitido_a_los_roles_del_modulo_5(cliente, repo_rep, rol):
+    _como(rol)
+
+    respuesta = cliente.get(
+        "/reportes/balance-general",
+        params={"fecha_inicio": "2026-11-01", "fecha_fin": "2026-11-30"},
+    )
+
+    assert respuesta.status_code == 200
