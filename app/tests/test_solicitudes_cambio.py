@@ -62,6 +62,20 @@ def repo_falso(cliente, monkeypatch):
     return falso
 
 
+@pytest.fixture
+def medico_en_bd(monkeypatch):
+    """Fija lo que devuelve AuthRepository.obtener_id_medico (sin PostgreSQL)."""
+
+    def fijar(id_medico: int | None):
+        monkeypatch.setattr(
+            AuthRepository,
+            "obtener_id_medico",
+            lambda self, id_usuario: id_medico,
+        )
+
+    return fijar
+
+
 def fijar_usuario(
     id_usuario: int = 1,
     rol: str = roles.MEDICO,
@@ -83,8 +97,9 @@ CREAR_OK = {
 # --- POST /solicitudes-cambio ---------------------------------------------
 
 
-def test_crear_solicitud_exitosa(cliente, repo_falso):
+def test_crear_solicitud_exitosa(cliente, repo_falso, medico_en_bd):
     fijar_usuario(id_medico=5)
+    medico_en_bd(5)
 
     respuesta = cliente.post("/solicitudes-cambio", json=CREAR_OK)
 
@@ -100,11 +115,11 @@ def test_crear_solicitud_exitosa(cliente, repo_falso):
     )]
 
 
-def test_crear_usa_auth_repository_si_el_token_no_trae_medico(
-    cliente, repo_falso, monkeypatch
+def test_crear_usa_el_medico_de_bd_si_el_token_no_trae_claim(
+    cliente, repo_falso, medico_en_bd
 ):
     fijar_usuario(id_usuario=9, id_medico=None)
-    monkeypatch.setattr(AuthRepository, "obtener_id_medico", lambda self, id_usuario: 7)
+    medico_en_bd(7)
 
     respuesta = cliente.post("/solicitudes-cambio", json=CREAR_OK)
 
@@ -112,9 +127,28 @@ def test_crear_usa_auth_repository_si_el_token_no_trae_medico(
     assert repo_falso.llamadas[0][1] == 7
 
 
-def test_crear_sin_medico_asociado_da_403(cliente, repo_falso, monkeypatch):
-    fijar_usuario(id_usuario=9, id_medico=None)
-    monkeypatch.setattr(AuthRepository, "obtener_id_medico", lambda self, id_usuario: None)
+def test_crear_ignora_claim_desactualizado_y_usa_el_medico_de_bd(
+    cliente, repo_falso, medico_en_bd
+):
+    fijar_usuario(id_usuario=9, id_medico=5)
+    medico_en_bd(7)
+
+    respuesta = cliente.post("/solicitudes-cambio", json=CREAR_OK)
+
+    assert respuesta.status_code == 201
+    assert repo_falso.llamadas == [(
+        "crear",
+        7,
+        {
+            "lugar_trabajo": [{"id_lugar_trabajo": 3, "cargo": "Jefe de servicio"}],
+            "especialidades": {"agregar": [3], "quitar": []},
+        },
+    )]
+
+
+def test_crear_sin_medico_asociado_da_403(cliente, repo_falso, medico_en_bd):
+    fijar_usuario(id_usuario=9, id_medico=5)
+    medico_en_bd(None)
 
     respuesta = cliente.post("/solicitudes-cambio", json=CREAR_OK)
 
@@ -138,6 +172,9 @@ def test_crear_exige_rol_medico(cliente, repo_falso):
     {"lugar_trabajo": [{"id_lugar_trabajo": 1, "campo_prohibido": "x"}]},
     {"especialidades": {"agregar": [1], "quitar": [1]}},
     {"especialidades": {"agregar": [], "quitar": []}},
+    {"lugar_trabajo": None, "especialidades": {"agregar": [1], "quitar": []}},
+    {"especialidades": None, "lugar_trabajo": [{"id_lugar_trabajo": 1, "cargo": "X"}]},
+    {"id_medico": 7, "lugar_trabajo": [{"id_lugar_trabajo": 1, "cargo": "X"}]},
 ])
 def test_crear_rechaza_payload_invalido(cliente, repo_falso, cuerpo):
     fijar_usuario()
@@ -148,8 +185,9 @@ def test_crear_rechaza_payload_invalido(cliente, repo_falso, cuerpo):
     assert repo_falso.llamadas == []
 
 
-def test_crear_propaga_error_de_bd_como_400(cliente, repo_falso):
+def test_crear_propaga_error_de_bd_como_400(cliente, repo_falso, medico_en_bd):
     fijar_usuario()
+    medico_en_bd(5)
     repo_falso.crear_error = error_bd("El registro 3 no existe o no pertenece al medico 5")
 
     respuesta = cliente.post("/solicitudes-cambio", json=CREAR_OK)
@@ -216,6 +254,21 @@ def test_procesar_exitoso_como_admin(cliente, repo_falso):
     )]
 
 
+def test_procesar_conserva_el_orden_de_las_decisiones(cliente, repo_falso):
+    fijar_usuario(rol=roles.ADMIN_CMP, id_medico=None)
+    cuerpo = {
+        "certificaciones": [
+            {"puntaje": "APROBADO"},
+            {"fecha_expiracion": "RECHAZADO", "vigente": "APROBADO"},
+        ],
+    }
+
+    respuesta = cliente.post("/solicitudes-cambio/8/procesar", json=cuerpo)
+
+    assert respuesta.status_code == 200
+    assert repo_falso.llamadas == [("procesar", 8, 1, cuerpo, None)]
+
+
 def test_procesar_exige_admin(cliente, repo_falso):
     fijar_usuario(rol=roles.MEDICO)
 
@@ -230,6 +283,7 @@ def test_procesar_exige_admin(cliente, repo_falso):
     {"lugar_trabajo": [{"campo_prohibido": "APROBADO"}]},
     {"especialidades": {"estado": "ACEPTADO"}},
     {"especialidades": {"estado": "APROBADO", "extra": 1}},
+    {"lugar_trabajo": None, "especialidades": {"estado": "APROBADO"}},
     {},
 ])
 def test_procesar_rechaza_decisiones_invalidas(cliente, repo_falso, cuerpo):
@@ -239,6 +293,22 @@ def test_procesar_rechaza_decisiones_invalidas(cliente, repo_falso, cuerpo):
 
     assert respuesta.status_code == 422
     assert repo_falso.llamadas == []
+
+
+@pytest.mark.parametrize("mensaje", [
+    "Falta la decision para el campo cargo",
+    "Las decisiones del registro 0 no coinciden con la solicitud",
+])
+def test_procesar_decisiones_incompletas_o_desalineadas_da_400(
+    cliente, repo_falso, mensaje
+):
+    fijar_usuario(rol=roles.ADMIN_CMP, id_medico=None)
+    repo_falso.procesar_error = error_bd(mensaje)
+
+    respuesta = cliente.post("/solicitudes-cambio/8/procesar", json=DECISIONES_OK)
+
+    assert respuesta.status_code == 400
+    assert respuesta.json()["detail"] == mensaje
 
 
 def test_procesar_solicitud_inexistente_da_400(cliente, repo_falso):

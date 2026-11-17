@@ -55,6 +55,30 @@ _CAMPOS_POR_SECCION = {
 }
 
 
+def _secciones_nulas(datos) -> list[str]:
+    """Secciones enviadas explícitamente como ``null``.
+
+    La BD rechaza una sección presente con valor nulo (no es ni arreglo ni
+    objeto), así que el schema no debe descartarla en silencio.
+    """
+    if not isinstance(datos, dict):
+        return []
+    return sorted(
+        seccion
+        for seccion in SECCIONES_PERMITIDAS
+        if seccion in datos and datos[seccion] is None
+    )
+
+
+def _rechazar_secciones_nulas(datos):
+    nulas = _secciones_nulas(datos)
+    if nulas:
+        raise ValueError(
+            "Las secciones no admiten null: " + ", ".join(nulas)
+        )
+    return datos
+
+
 class _RegistroCambio(BaseModel):
     """Base de un registro a modificar dentro de una sección."""
 
@@ -138,6 +162,11 @@ class SolicitudCambioCrear(BaseModel):
     subespecialidades: CambioRelacion | None = None
     asociaciones: CambioRelacion | None = None
 
+    @model_validator(mode="before")
+    @classmethod
+    def secciones_no_nulas(cls, datos):
+        return _rechazar_secciones_nulas(datos)
+
     @field_validator("lugar_trabajo", "estudio_medico", "certificaciones")
     @classmethod
     def seccion_no_vacia(cls, valor):
@@ -185,6 +214,11 @@ class SolicitudCambioProcesar(BaseModel):
     subespecialidades: DecisionRelacion | None = None
     asociaciones: DecisionRelacion | None = None
     comentario: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def secciones_no_nulas(cls, datos):
+        return _rechazar_secciones_nulas(datos)
 
     @field_validator("lugar_trabajo", "estudio_medico", "certificaciones")
     @classmethod

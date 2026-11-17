@@ -18,20 +18,13 @@ def listar_solicitudes(db: Session, estado: str | None) -> list[dict[str, Any]]:
 
 
 def obtener_id_medico(db: Session, usuario: Any) -> int:
-    """Resuelve el médico del usuario autenticado.
+    """Resuelve el médico del usuario autenticado consultando la base de datos.
 
-    Reutiliza `id_medico`, que ya viaja en el JWT cuando el usuario es médico.
-    Si no viene, consulta la relación 1:1 con la función equivalente existente
-    `AuthRepository.obtener_id_medico`.
+    No se confía en el claim ``id_medico`` del JWT: puede estar desactualizado
+    (por ejemplo, si el médico asociado al usuario cambió) y permitiría crear
+    solicitudes a nombre de otro médico. La relación 1:1 en la BD es la fuente
+    de verdad; si el usuario no tiene médico asociado, responde 403.
     """
-    id_medico = (
-        usuario.get("id_medico")
-        if isinstance(usuario, dict)
-        else getattr(usuario, "id_medico", None)
-    )
-    if isinstance(id_medico, int) and id_medico >= 1:
-        return id_medico
-
     id_usuario = (
         usuario.get("id_usuario")
         if isinstance(usuario, dict)

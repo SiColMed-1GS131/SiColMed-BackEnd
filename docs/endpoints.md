@@ -166,6 +166,57 @@ El body usa **secciones**:
   `quitar` (arreglos de ids). Debe haber al menos una operación y no se puede
   agregar y quitar el mismo id.
 
+### 6.0 Contrato de las funciones de BD (fuente de verdad)
+
+Estas firmas y formas JSON son las que esperan las funciones ya fusionadas en
+`develop`. El backend valida con Pydantic antes de llamarlas y traduce los
+`RAISE EXCEPTION` a `400`; por eso algunas reglas se ven como `422` en el API y
+otras como `400`.
+
+* **`crear_solicitud_cambio(p_id_medico integer, p_cambios jsonb) RETURNS integer`**
+  * `p_cambios` debe ser un objeto no vacío con **solo** estas claves:
+    `lugar_trabajo`, `estudio_medico`, `certificaciones`, `especialidades`,
+    `subespecialidades`, `asociaciones`.
+  * Se rechazan explícitamente `medico` y `direccion` (datos personales), igual
+    que cualquier otra clave.
+  * Registros: arreglo **no vacío**; cada elemento es un objeto con su id
+    (`id_lugar_trabajo`/`id_estudio`/`id_certificacion`) y **al menos un** campo
+    de la lista blanca con un valor distinto al guardado. No se permiten claves
+    fuera de esa lista.
+  * Relaciones: objeto con **exactamente** `agregar` y `quitar` (arreglos de
+    ids positivos). Al menos una operación en total; un id no puede estar en
+    ambas listas. `agregar` exige que el registro exista en el catálogo;
+    `quitar` exige que hoy esté asociado al médico.
+  * Devuelve el id de la solicitud, que queda `PENDIENTE`.
+  * La función guarda una copia normalizada en `cambios`: en las secciones de
+    registros cada campo es `{"valor_anterior": ..., "valor_nuevo": ...,
+    "estado": "PENDIENTE"}`; en las relaciones guarda
+    `{"agregar": [...], "quitar": [...], "estado": "PENDIENTE"}`.
+* **`procesar_solicitud_cambio(p_id_solicitud_cambio integer, p_id_administrador integer, p_decisiones jsonb, p_comentario text DEFAULT NULL) RETURNS boolean`**
+  * `p_decisiones` debe ser un objeto no vacío cuyas claves sean secciones
+    presentes en la solicitud.
+  * Relaciones: `{"estado": "APROBADO" | "RECHAZADO"}` (sin otras claves).
+  * Registros: arreglo **de la misma longitud y en el mismo orden** que el
+    arreglo guardado; cada elemento es un objeto que decide **todos** los
+    campos de ese registro con `"APROBADO"` o `"RECHAZADO"`. No se admiten
+    campos ajenos ni decisiones para campos ya resueltos.
+  * Solo aplica los campos aprobados; para los de registro vuelve a comprobar
+    que el valor actual siga siendo `valor_anterior`. Las secciones que no se
+    envían quedan `PENDIENTE`; cuando ya no queda ninguna pendiente, la
+    solicitud pasa a `PROCESADO` con administrador, comentario y fecha.
+  * El administrador debe seguir activo con rol `admin_cmp` en la BD.
+* **`listar_solicitudes_cambio(p_estado text DEFAULT NULL) RETURNS TABLE(...)`**
+  * `p_estado` nulo trae todas; si viene, debe ser `PENDIENTE` o `PROCESADO`
+    (cualquier otro valor lo rechaza la función).
+  * Columnas: `id_solicitud_cambio`, `id_medico`, `nombre_completo`, `estado`,
+    `fecha_solicitud`, `cambios` (jsonb normalizado tal como se describió).
+  * Orden: `fecha_solicitud`, luego `id_solicitud_cambio`.
+
+> Validación: las reglas que el schema puede comprobar (claves, tipos, listas
+> vacías, intersección) responden `422`; las que dependen del estado en BD
+> (existencia/ownership de registros, valor actual, longitud de las decisiones,
+> admin activo) responden `400`.
+
 ### 6.1 Crear solicitud
 
 * **Método:** `POST`
@@ -183,10 +234,12 @@ El body usa **secciones**:
   {"id_solicitud_cambio": 12}
   ```
 * **Errores:**
-  * `403` si el usuario autenticado no tiene médico asociado.
+  * `403` si el usuario autenticado no tiene médico asociado (el `id_medico`
+    se resuelve desde la BD, nunca desde el body ni desde el claim del token).
   * `422` si se envía una sección o clave no permitida (incluido cualquier
-    intento de tocar `medico` o `direccion`), una sección de registros vacía, un
-    registro sin campos a cambiar, o una intersección entre `agregar` y `quitar`.
+    intento de tocar `medico` o `direccion`), una sección enviada como `null`,
+    una sección de registros vacía, un registro sin campos a cambiar, o una
+    intersección entre `agregar` y `quitar`.
   * `400` con el mensaje de la función de BD si un registro no existe, no
     pertenece al médico, o el valor nuevo es igual al actual.
 
@@ -198,8 +251,11 @@ El body usa **secciones**:
 * **Parámetro Query:** `estado` (`PENDIENTE` o `PROCESADO`; sin valor trae todas).
 * **Respuesta Exitosa (200 OK):** lista de solicitudes con
   `id_solicitud_cambio`, `id_medico`, `nombre_completo`, `estado`,
-  `fecha_solicitud` y `cambios` (el JSON normalizado con `valor_anterior`,
-  `valor_nuevo` y `estado` por campo).
+  `fecha_solicitud` y `cambios` (el JSON normalizado descrito en 6.0). En las
+  relaciones, `cambios` trae `agregar`, `quitar` y `estado`; en las secciones
+  de registros, cada campo trae `valor_anterior`, `valor_nuevo` y `estado`.
+* **Errores:** `403` si el usuario no es `admin_cmp`; `400` si `estado` no es
+  `PENDIENTE` ni `PROCESADO`.
 
 ### 6.3 Procesar solicitud
 
@@ -217,16 +273,20 @@ El body usa **secciones**:
   * Las secciones de registros reciben un arreglo **en el mismo orden** que la
     solicitud; cada elemento asocia cada campo pedido a `APROBADO` o `RECHAZADO`.
   * Las relaciones reciben únicamente `{"estado": "APROBADO" | "RECHAZADO"}`.
+  * Las decisiones de cada sección de registros deben cubrir **todos** sus
+    campos; si falta alguno o el arreglo no coincide en longitud y orden con lo
+    solicitado, la BD responde `400`.
   * Solo se aplican los campos aprobados. Si queda alguna sección sin decidir,
     la solicitud sigue `PENDIENTE`; cuando todas quedan resueltas pasa a
     `PROCESADO` con administrador, comentario y fecha de respuesta.
 * **Respuesta Exitosa (200 OK):** `true`
 * **Errores:**
   * `403` si el usuario no es `admin_cmp`.
-  * `422` si el estado no es `APROBADO`/`RECHAZADO`, o se envía una clave fuera
-    de las permitidas.
+  * `422` si el estado no es `APROBADO`/`RECHAZADO`, se envía una clave fuera
+    de las permitidas, o una sección llega como `null`.
   * `400` con el mensaje de BD si la solicitud no existe, ya no está pendiente,
-    o las decisiones no coinciden con lo solicitado.
+    o las decisiones no cubren todos los campos / no coinciden en longitud y
+    orden con lo solicitado.
 
 ---
 
