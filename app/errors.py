@@ -15,6 +15,10 @@ class MedicoNoEncontrado(Exception):
     """El médico solicitado no existe o no puede ser actualizado."""
 
 
+class UsuarioSinMedico(Exception):
+    """El usuario autenticado no tiene un médico asociado."""
+
+
 # DEF-018: el texto de PostgreSQL solo se muestra cuando viene de un RAISE EXCEPTION de
 # nuestras funciones (SQLSTATE P0001), porque ya está escrito para el usuario. Los demás
 # errores (restricciones, tipos, valores fuera de rango, bytes NUL...) traen detalles

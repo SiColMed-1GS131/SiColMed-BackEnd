@@ -3,7 +3,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.repositories.base import Arg, llamar_tabla
+from app.repositories.base import Arg, llamar_escalar, llamar_tabla
 
 
 def listar_solicitudes_cambio(
@@ -16,3 +16,38 @@ def listar_solicitudes_cambio(
         {"estado": Arg(estado, "text")},
     )
 
+
+def crear_solicitud_cambio(
+    db: Session, id_medico: int, cambios: dict[str, Any]
+) -> int:
+    """Llama a crear_solicitud_cambio(id_medico, cambios) y devuelve su id."""
+    return llamar_escalar(
+        db,
+        "crear_solicitud_cambio",
+        {
+            "id_medico": Arg(id_medico, "integer"),
+            "cambios": Arg(cambios, "jsonb"),
+        },
+        commit=True,
+    )
+
+
+def procesar_solicitud_cambio(
+    db: Session,
+    id_solicitud_cambio: int,
+    id_administrador: int,
+    decisiones: dict[str, Any],
+    comentario: str | None = None,
+) -> bool:
+    """Llama a procesar_solicitud_cambio con las decisiones del administrador."""
+    return llamar_escalar(
+        db,
+        "procesar_solicitud_cambio",
+        {
+            "id_solicitud_cambio": Arg(id_solicitud_cambio, "integer"),
+            "id_administrador": Arg(id_administrador, "integer"),
+            "decisiones": Arg(decisiones, "jsonb"),
+            "comentario": Arg(comentario, "text"),
+        },
+        commit=True,
+    )
