@@ -217,6 +217,13 @@ otras como `400`.
 > (existencia/ownership de registros, valor actual, longitud de las decisiones,
 > admin activo) responden `400`.
 
+> Nota sobre `certificaciones.vigente`: la API y la lista blanca siguen
+> aceptando el campo, pero el formulario del médico ya no lo ofrece editable.
+> Se muestra como texto de solo lectura calculado con `fecha_expiracion`; la
+> vigencia se solicita cambiando esa fecha. Así se evita comparar contra el
+> valor derivado del perfil (`fecha_expiracion >= CURRENT_DATE`) cuando la
+> columna almacenada difiere.
+
 ### 6.1 Crear solicitud
 
 * **Método:** `POST`
