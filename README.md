@@ -192,7 +192,7 @@ Responsabilidades:
 
 - Validar que las solicitudes solo contengan campos no personales.
 - Modelar `cambios` y `decisiones` como JSON estructurado.
-- Permitir únicamente decisiones `ACEPTADO` o `NEGADO`.
+- Permitir únicamente decisiones `APROBADO` o `RECHAZADO`.
 - Validar que las decisiones cubran todos los campos solicitados.
 - Diferenciar el estado general de la solicitud del estado de cada cambio.
 - Confirmar con Base de datos los valores oficiales de estado y los catálogos.
