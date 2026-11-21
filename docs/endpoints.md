@@ -162,6 +162,20 @@ El body usa **secciones**:
   * `lugar_trabajo`: `empresa_institucion`, `cargo`, `telefono_trabajo`, `email_laboral`.
   * `estudio_medico`: `tipo_estudio`, `titulo`, `institucion`, `lugar`, `fecha`.
   * `certificaciones`: `vigente`, `fecha_obtencion`, `puntaje`, `fecha_expiracion`.
+* **Agregar filas nuevas (solo `admin_cmp`)**: un elemento de `lugar_trabajo` o
+  `estudio_medico` **sin id** crea una fila nueva (M2-REG-09 y M2-REG-10).
+  * `estudio_medico` nuevo: `tipo_estudio`, `titulo`, `institucion`, `lugar` y
+    `fecha` son obligatorios (el título básico usa `tipo_estudio` = "Título básico").
+  * `lugar_trabajo` nuevo: `empresa_institucion`, `cargo`, `telefono_trabajo`,
+    `email_laboral` y `direccion` obligatorios. `direccion` lleva
+    `id_corregimiento`, `apartado_postal`, `calle`, `numero_direccion` y,
+    opcional, `edificio`.
+  * Un elemento con id solo actualiza; no acepta `direccion`. Un id `null` se
+    rechaza con 422. `certificaciones` sigue siendo solo de actualización.
+  ```json
+  {"estudio_medico": [{"tipo_estudio": "Título básico", "titulo": "Doctor en Medicina",
+                       "institucion": "Universidad de Panamá", "lugar": "Panamá", "fecha": "2010-12-15"}]}
+  ```
 * `especialidades`, `subespecialidades`, `asociaciones`: objeto con `agregar` y
   `quitar` (arreglos de ids). Debe haber al menos una operación y no se puede
   agregar y quitar el mismo id.
@@ -307,5 +321,3 @@ otras como `400`.
   * `listar_cuentas(p_activa boolean DEFAULT NULL)` → `TABLE(id_cuenta, nombre, tipo, activa, tiene_movimientos)`. `tiene_movimientos` es `true` si la cuenta aparece en `movimiento_cuenta`; el frontend lo usa para bloquear el cambio de tipo.
   * `crear_cuenta(p_nombre text, p_tipo text)` → `integer` (id_cuenta). Rechaza tipos distintos de `DEBITO`/`CREDITO` y crea la cuenta activa.
 * **Qué debe confirmar BD:** el orden de `listar_cuentas` (por nombre), el mensaje de error de `crear_cuenta` y si quieren un mensaje propio para nombres repetidos (hoy lo rechaza la restricción `UNIQUE` de `cuenta.nombre`).
-
-  

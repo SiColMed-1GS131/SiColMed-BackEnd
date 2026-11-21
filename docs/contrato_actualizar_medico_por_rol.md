@@ -298,22 +298,14 @@ aprobada para esos campos.
 
 ## Educación
 
-La sección de educación aparece en el perfil funcional, pero sus campos,
-tablas y relaciones no están definidos todavía en la función
-`actualizar_medico`.
-
-Hasta que Base de Datos confirme el contrato, no se deben agregar claves como
-`educacion`, `titulo_basico`, `institucion`, `lugar` o `fecha` a la función.
-
-Cuando se defina, deberá documentarse explícitamente:
-
-1. Si `educacion` es un objeto o una lista.
-2. Los nombres exactos de sus campos.
-3. Los tipos de cada campo.
-4. Las tablas que se modifican.
-5. Si el médico puede editarla directamente.
-6. Si requiere solicitud y aprobación administrativa.
-7. Cómo se eliminan o reemplazan registros anteriores.
+El título básico se guarda en `estudio_medico` (sección `estudio_medico`).
+Solo `admin_cmp` puede tocarla. Un elemento con `id_estudio` actualiza campos;
+un elemento sin id agrega una fila nueva y exige `tipo_estudio`, `titulo`,
+`institucion`, `lugar` y `fecha`. No se usan claves como `educacion` ni
+`titulo_basico`. Lo mismo aplica a `lugar_trabajo` (sin `id_lugar_trabajo` se
+crea el lugar con su `direccion`). La certificación sigue siendo de solo lectura
+en este endpoint. Las secciones de educación continua y estado de cuenta no
+existen aún en BD.
 
 ## Retorno
 

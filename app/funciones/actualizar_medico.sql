@@ -18,6 +18,8 @@ DECLARE
     v_id_corregimiento INTEGER;
     v_id_distrito INTEGER;
     v_id_provincia INTEGER;
+    v_dir_nueva JSONB;
+    v_id_dir_nueva INTEGER;
     v_hay_cambios BOOLEAN := FALSE;
     v_campos_personales TEXT[] := ARRAY[
         'primer_nombre',
@@ -393,7 +395,8 @@ BEGIN
     -- Desde este punto, solo admin_cmp puede modificar relaciones.
     IF v_rol = 'admin_cmp' THEN
 
-        -- 7. LUGAR_TRABAJO: actualizar registros existentes.
+        -- 7. LUGAR_TRABAJO: actualizar un registro existente (con id_lugar_trabajo)
+        --    o agregar uno nuevo (sin id_lugar_trabajo, con su dirección).
         IF p_datos ? 'lugar_trabajo' THEN
             IF jsonb_typeof(p_datos -> 'lugar_trabajo')
                IS DISTINCT FROM 'array' THEN
@@ -404,10 +407,98 @@ BEGIN
                 SELECT value
                 FROM jsonb_array_elements(p_datos -> 'lugar_trabajo')
             LOOP
-                IF jsonb_typeof(v_elemento) IS DISTINCT FROM 'object'
-                   OR NOT (v_elemento ? 'id_lugar_trabajo') THEN
-                    RAISE EXCEPTION
-                        'Cada lugar de trabajo debe incluir id_lugar_trabajo';
+                IF jsonb_typeof(v_elemento) IS DISTINCT FROM 'object' THEN
+                    RAISE EXCEPTION 'Cada lugar de trabajo debe ser un objeto';
+                END IF;
+
+                -- Sin id_lugar_trabajo: se agrega un lugar de trabajo nuevo.
+                IF NOT (v_elemento ? 'id_lugar_trabajo') THEN
+                    FOR v_campo IN SELECT jsonb_object_keys(v_elemento)
+                    LOOP
+                        IF NOT (v_campo = ANY(v_campos_trabajo))
+                           AND v_campo <> 'direccion' THEN
+                            RAISE EXCEPTION
+                                'Campo de lugar_trabajo no permitido: %', v_campo;
+                        END IF;
+                    END LOOP;
+
+                    IF NULLIF(BTRIM(v_elemento ->> 'empresa_institucion'), '') IS NULL
+                       OR NULLIF(BTRIM(v_elemento ->> 'cargo'), '') IS NULL
+                       OR NULLIF(BTRIM(v_elemento ->> 'telefono_trabajo'), '') IS NULL
+                       OR NULLIF(BTRIM(v_elemento ->> 'email_laboral'), '') IS NULL THEN
+                        RAISE EXCEPTION
+                            'Todos los campos del lugar de trabajo son obligatorios';
+                    END IF;
+
+                    v_dir_nueva := v_elemento -> 'direccion';
+                    IF jsonb_typeof(v_dir_nueva) IS DISTINCT FROM 'object' THEN
+                        RAISE EXCEPTION
+                            'El lugar de trabajo nuevo debe incluir su dirección';
+                    END IF;
+
+                    FOR v_campo IN SELECT jsonb_object_keys(v_dir_nueva)
+                    LOOP
+                        IF NOT (v_campo = ANY(v_campos_direccion)) THEN
+                            RAISE EXCEPTION
+                                'Campo de la dirección laboral no permitido: %',
+                                v_campo;
+                        END IF;
+                    END LOOP;
+
+                    IF NULLIF(BTRIM(v_dir_nueva ->> 'id_corregimiento'), '') IS NULL THEN
+                        RAISE EXCEPTION
+                            'El corregimiento de la dirección laboral es obligatorio';
+                    END IF;
+
+                    IF NULLIF(BTRIM(v_dir_nueva ->> 'apartado_postal'), '') IS NULL
+                       OR NULLIF(BTRIM(v_dir_nueva ->> 'calle'), '') IS NULL
+                       OR NULLIF(BTRIM(v_dir_nueva ->> 'numero_direccion'), '') IS NULL THEN
+                        RAISE EXCEPTION
+                            'La dirección laboral debe incluir apartado postal, calle y número';
+                    END IF;
+
+                    v_id_corregimiento := (v_dir_nueva ->> 'id_corregimiento')::INTEGER;
+
+                    SELECT d.id_provincia, c.id_distrito
+                    INTO v_id_provincia, v_id_distrito
+                    FROM corregimiento c
+                    JOIN distrito d ON d.id_distrito = c.id_distrito
+                    WHERE c.id_corregimiento = v_id_corregimiento;
+
+                    IF NOT FOUND THEN
+                        RAISE EXCEPTION
+                            'El corregimiento laboral % no existe',
+                            v_id_corregimiento;
+                    END IF;
+
+                    INSERT INTO direccion (
+                        apartado_postal, calle, edificio, numero_direccion,
+                        id_provincia, id_distrito, id_corregimiento
+                    )
+                    VALUES (
+                        NULLIF(BTRIM(v_dir_nueva ->> 'apartado_postal'), ''),
+                        NULLIF(BTRIM(v_dir_nueva ->> 'calle'), ''),
+                        NULLIF(BTRIM(v_dir_nueva ->> 'edificio'), ''),
+                        NULLIF(BTRIM(v_dir_nueva ->> 'numero_direccion'), ''),
+                        v_id_provincia, v_id_distrito, v_id_corregimiento
+                    )
+                    RETURNING id_direccion INTO v_id_dir_nueva;
+
+                    INSERT INTO lugar_trabajo (
+                        id_medico, empresa_institucion, cargo,
+                        telefono_trabajo, email_laboral, id_direccion
+                    )
+                    VALUES (
+                        p_id_medico,
+                        BTRIM(v_elemento ->> 'empresa_institucion'),
+                        BTRIM(v_elemento ->> 'cargo'),
+                        BTRIM(v_elemento ->> 'telefono_trabajo'),
+                        BTRIM(v_elemento ->> 'email_laboral'),
+                        v_id_dir_nueva
+                    );
+
+                    v_hay_cambios := TRUE;
+                    CONTINUE;
                 END IF;
 
                 v_id := (v_elemento ->> 'id_lugar_trabajo')::INTEGER;
@@ -452,7 +543,8 @@ BEGIN
             END LOOP;
         END IF;
 
-        -- 8. ESTUDIO_MEDICO: actualizar estudios existentes.
+        -- 8. ESTUDIO_MEDICO: actualizar un estudio existente (con id_estudio)
+        --    o agregar uno nuevo (sin id_estudio).
         IF p_datos ? 'estudio_medico' THEN
             IF jsonb_typeof(p_datos -> 'estudio_medico')
                IS DISTINCT FROM 'array' THEN
@@ -463,9 +555,44 @@ BEGIN
                 SELECT value
                 FROM jsonb_array_elements(p_datos -> 'estudio_medico')
             LOOP
-                IF jsonb_typeof(v_elemento) IS DISTINCT FROM 'object'
-                   OR NOT (v_elemento ? 'id_estudio') THEN
-                    RAISE EXCEPTION 'Cada estudio debe incluir id_estudio';
+                IF jsonb_typeof(v_elemento) IS DISTINCT FROM 'object' THEN
+                    RAISE EXCEPTION 'Cada estudio debe ser un objeto';
+                END IF;
+
+                -- Sin id_estudio: se agrega un estudio nuevo (por ejemplo, el título básico).
+                IF NOT (v_elemento ? 'id_estudio') THEN
+                    FOR v_campo IN SELECT jsonb_object_keys(v_elemento)
+                    LOOP
+                        IF NOT (v_campo = ANY(v_campos_estudio)) THEN
+                            RAISE EXCEPTION
+                                'Campo de estudio_medico no permitido: %',
+                                v_campo;
+                        END IF;
+                    END LOOP;
+
+                    IF NULLIF(BTRIM(v_elemento ->> 'tipo_estudio'), '') IS NULL
+                       OR NULLIF(BTRIM(v_elemento ->> 'titulo'), '') IS NULL
+                       OR NULLIF(BTRIM(v_elemento ->> 'institucion'), '') IS NULL
+                       OR NULLIF(BTRIM(v_elemento ->> 'lugar'), '') IS NULL
+                       OR NULLIF(BTRIM(v_elemento ->> 'fecha'), '') IS NULL THEN
+                        RAISE EXCEPTION
+                            'Todos los campos del estudio son obligatorios';
+                    END IF;
+
+                    INSERT INTO estudio_medico (
+                        id_medico, tipo_estudio, titulo, institucion, lugar, fecha
+                    )
+                    VALUES (
+                        p_id_medico,
+                        BTRIM(v_elemento ->> 'tipo_estudio'),
+                        BTRIM(v_elemento ->> 'titulo'),
+                        BTRIM(v_elemento ->> 'institucion'),
+                        BTRIM(v_elemento ->> 'lugar'),
+                        (v_elemento ->> 'fecha')::DATE
+                    );
+
+                    v_hay_cambios := TRUE;
+                    CONTINUE;
                 END IF;
 
                 v_id := (v_elemento ->> 'id_estudio')::INTEGER;
