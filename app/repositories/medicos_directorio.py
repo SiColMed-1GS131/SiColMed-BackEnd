@@ -22,11 +22,13 @@ class RepositorioMedicosDirectorio:
             {
                 "apellido": Arg(filtros.apellido, "text"),
                 "id_especialidad": Arg(filtros.id_especialidad, "integer"),
-                "id_asociacion": Arg(filtros.id_asociacion, "integer"),
+                # El ORDEN debe coincidir con la firma de filtrar_medicos en la BD
+                # (las llamadas son posicionales): subespecialidad va antes que asociación.
                 "id_subespecialidad": Arg(
                     filtros.id_subespecialidad,
                     "integer",
                 ),
+                "id_asociacion": Arg(filtros.id_asociacion, "integer"),
                 "certificacion_vigente": Arg(
                     filtros.certificacion_vigente,
                     "boolean",
