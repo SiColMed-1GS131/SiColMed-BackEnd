@@ -87,6 +87,8 @@ USUARIOS_MODULO5: tuple[dict[str, str], ...] = (
      "password": _env("DEMO_TESORERO_PASSWORD", "Tesorero123!")},
     {"rol": "admin_asociacion", "correo": _env("DEMO_ADMIN_ASOCIACION_EMAIL", "asociacion@colmed.dev"),
      "password": _env("DEMO_ADMIN_ASOCIACION_PASSWORD", "Asociacion123!")},
+    # Tesorero de prueba fijo que usa el equipo de QA en las pruebas manuales del Módulo 5.
+    {"rol": "tesorero", "correo": "qa.tesorero@colmed.dev", "password": "Tesorero#2026"},
 )
 
 # Certificaciones: vigente se calcula también en obtener_perfil_medico a partir de
